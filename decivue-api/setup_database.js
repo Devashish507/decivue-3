@@ -62,6 +62,25 @@ async function setupDatabase() {
     try {
         await db.sequelize.sync({ alter: true });
         console.log('✅  All tables synced successfully!\n');
+
+        // FORCE ADD COLUMNS IF MISSING (Sequelize alter can be flaky with JSON)
+        try {
+            console.log('🔧  Ensuring JSON columns exist in DecisionVersions...');
+            await db.sequelize.query(`
+                ALTER TABLE DecisionVersions 
+                ADD COLUMN snapshot_json JSON NULL,
+                ADD COLUMN changed_fields_json JSON NULL;
+            `).catch(err => {
+                // Ignore "start with Duplicate column name" error
+                if (!err.message.includes("Duplicate column name")) {
+                    console.log('   (Note: Columns likely already exist or other error:', err.message, ')');
+                }
+            });
+            console.log('✅  Manual column check complete.\n');
+        } catch (e) {
+            console.log('   Manual column check skipped/failed (non-fatal).\n');
+        }
+
     } catch (err) {
         console.error('❌  Error syncing database:', err.message);
         console.error('\n   Full error:\n', err);

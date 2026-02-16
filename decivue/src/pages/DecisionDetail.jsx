@@ -689,6 +689,7 @@ export default function DecisionDetail() {
               ) : (
                 <VersionHistory
                   decisionId={id}
+                  currentDecision={decision}
                   onCompare={(version) => setComparingVersion(version)}
                 />
               )}
