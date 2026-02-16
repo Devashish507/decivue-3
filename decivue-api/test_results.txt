@@ -1,0 +1,17 @@
+﻿=== Testing Decision Detail Endpoints ===
+
+Total decisions found: 9
+
+Γ£à 1/9 "TEAM"
+Γ£à 2/9 "Adopt Remote-First Work Policy"
+Γ£à 3/9 "Migrate customer support to a shared inbox tool"
+Γ£à 4/9 "Launch Mobile App for Customer Portal"
+Γ£à 5/9 "Migrate to Microservices Architecture"
+Γ£à 6/9 "Implement AI-Powered Customer Support Chatbot"
+Γ£à 7/9 "Finalize Pune Convention Center"
+Γ£à 8/9 "Partner With Influencer Network"
+Γ£à 9/9 "Select Event Venue"
+
+=== Summary ===
+Γ£à Successful: 9
+Γ¥î Failed: 0

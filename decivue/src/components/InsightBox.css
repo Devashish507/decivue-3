@@ -1,0 +1,113 @@
+.sticky-note-container {
+    position: relative;
+    display: inline-block;
+    padding: 10px;
+    width: 100%;
+}
+
+.sticky-note {
+    background-color: #fef08a;
+    padding: 2.5rem 1.5rem 1.5rem 1.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: rotate(-1.5deg);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    border-bottom-right-radius: 40px 5px;
+}
+
+.sticky-note:hover {
+    transform: rotate(0deg) scale(1.02);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.sticky-note::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 25px;
+    background-color: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(2px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.sticky-note-pin {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 14px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    z-index: 20;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset -2px -2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.sticky-note-pin::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 4px;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+}
+
+.sticky-note-corner {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 30px 30px;
+    border-color: transparent transparent #eab308 transparent;
+    filter: drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.1));
+}
+
+.sticky-note-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    color: #854d0e;
+    margin-bottom: 0.5rem;
+}
+
+.sticky-note-subtitle {
+    font-size: 0.75rem;
+    color: #a16207;
+    opacity: 0.8;
+    margin-bottom: 1rem;
+    font-style: italic;
+}
+
+.sticky-note-content {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sticky-note-item {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #713f12;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.sticky-note-item::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: #ca8a04;
+    font-weight: bold;
+}

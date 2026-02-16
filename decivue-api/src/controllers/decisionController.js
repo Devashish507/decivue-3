@@ -1,0 +1,796 @@
+const { Decision, Assumption, DecisionRelation, DecisionHistory, DecisionVersion } = require('../models');
+const treeService = require('../services/treeService');
+const healthService = require('../services/healthService');
+const { Op } = require('sequelize');
+
+exports.getAllDecisions = async (req, res) => {
+    try {
+        const { includeSubDecisions } = req.query;
+
+        // Build where clause
+        const whereClause = {};
+
+        // If not explicitly including sub-decisions, only show root decisions
+        if (includeSubDecisions !== 'true') {
+            whereClause.parent_id = null;
+        }
+
+        // Get decisions
+        console.log('[API] getAllDecisions query:', req.query);
+        console.log('[API] whereClause:', JSON.stringify(whereClause, null, 2));
+
+        // Debug: Check if any decisions exist with parent_id != null
+        const subCount = await Decision.count({ where: { parent_id: { [Op.ne]: null } } });
+        console.log(`[API] DB Check: Total sub-decisions in DB: ${subCount}`);
+
+        const decisions = await Decision.findAll({
+            where: whereClause,
+            include: [
+                {
+                    model: Decision,
+                    as: 'children',
+                    attributes: ['id', 'title', 'lifecycle_state', 'current_confidence', 'risk_level', 'progress_percentage'],
+                    include: [{ model: require('../models').SubDecisionTracking, as: 'tracking' }]
+                },
+                {
+                    model: DecisionRelation,
+                    as: 'outgoingRelations',
+                    include: [{
+                        model: Decision,
+                        as: 'targetDecision',
+                        attributes: ['id', 'title']
+                    }]
+                },
+                {
+                    model: DecisionRelation,
+                    as: 'incomingRelations',
+                    include: [{
+                        model: Decision,
+                        as: 'sourceDecision',
+                        attributes: ['id', 'title']
+                    }]
+                }
+            ],
+            order: [['created_at', 'DESC']]
+        });
+        console.log(`[API] Found ${decisions.length} decisions`);
+
+        // Calculate health for each decision
+        const decisionsWithHealth = await Promise.all(
+            decisions.map(async (decision) => {
+                console.log(`Calculating health for: ${decision.title}`);
+                const healthResult = await healthService.calculateHealth(decision);
+                console.log(`Health result:`, healthResult);
+                const { healthScore, newHealthStatus, conflicts } = healthResult;
+                return {
+                    ...decision.toJSON(),
+                    calculated_health: {
+                        score: healthScore,
+                        status: newHealthStatus,
+                        conflict_count: conflicts
+                    }
+                };
+            })
+        );
+
+        res.json({ success: true, data: decisionsWithHealth });
+    } catch (err) {
+        console.error('getAllDecisions error:', err);
+        const fs = require('fs');
+        fs.appendFileSync('api_errors.log', `${new Date().toISOString()} - getAllDecisions Error: ${err.stack}\n`);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.getDecisionById = async (req, res) => {
+    try {
+        console.log(`[API] Fetching decision with ID: ${req.params.id}`);
+
+        const decision = await Decision.findByPk(req.params.id, {
+            include: [
+                { model: Assumption, as: 'assumptions' },
+                { model: DecisionHistory, as: 'history' },
+                { model: Decision, as: 'parent' },
+                { model: require('../models').SubDecisionTracking, as: 'tracking' },
+                {
+                    model: Decision,
+                    as: 'children',
+                    attributes: ['id', 'title', 'lifecycle_state', 'current_confidence', 'risk_level', 'progress_percentage'],
+                    include: [{ model: require('../models').SubDecisionTracking, as: 'tracking' }]
+                },
+                {
+                    model: DecisionRelation,
+                    as: 'outgoingRelations',
+                    include: [{
+                        model: Decision,
+                        as: 'targetDecision',
+                        attributes: ['id', 'title']
+                    }]
+                },
+                {
+                    model: DecisionRelation,
+                    as: 'incomingRelations',
+                    include: [{
+                        model: Decision,
+                        as: 'sourceDecision',
+                        attributes: ['id', 'title']
+                    }]
+                }
+            ]
+        });
+
+        if (!decision) {
+            console.log(`[API] Decision not found: ${req.params.id}`);
+            return res.status(404).json({
+                success: false,
+                message: 'Decision not found'
+            });
+        }
+
+        console.log(`[API] Decision found: ${decision.title}`);
+        console.log(`[API] Assumptions count: ${decision.assumptions?.length || 0}`);
+        console.log(`[API] History events count: ${decision.history?.length || 0}`);
+
+        // Validate decision data completeness
+        if (!decision.id || !decision.title) {
+            console.error(`[API] Decision has missing required fields:`, {
+                id: decision.id,
+                title: decision.title
+            });
+            return res.status(500).json({
+                success: false,
+                message: 'Decision data is incomplete - missing required fields'
+            });
+        }
+
+        // Log warnings for missing optional fields
+        if (!decision.context) console.warn(`[API] Decision ${decision.id} missing context`);
+        if (!decision.current_confidence) console.warn(`[API] Decision ${decision.id} missing current_confidence`);
+
+        // Calculate dynamic health info on fetch
+        const { healthScore, newHealthStatus, conflicts, logEvents } = await healthService.calculateHealth(decision);
+
+        res.json({
+            success: true,
+            data: {
+                ...decision.toJSON(),
+                calculated_confidence: healthScore, // Dynamic confidence based on criteria
+                calculated_health: {
+                    score: healthScore,
+                    status: newHealthStatus,
+                    conflict_count: conflicts,
+                    log_events: logEvents
+                }
+            }
+        });
+    } catch (err) {
+        console.error('[API] Error fetching decision:', err.message);
+        console.error('[API] Stack trace:', err.stack);
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+};
+
+exports.getDecisionTree = async (req, res) => {
+    try {
+        const tree = await treeService.getTree(req.params.id);
+        if (!tree) return res.status(404).json({ success: false, message: 'Tree root not found' });
+        res.json({ success: true, data: tree });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.updateDecision = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const decision = await Decision.findByPk(id, {
+            include: [{ model: Assumption, as: 'assumptions' }]
+        });
+
+        if (!decision) {
+            return res.status(404).json({ success: false, message: 'Decision not found' });
+        }
+
+        const oldData = decision.toJSON();
+        const { title, context, current_confidence, risk_level, impact_level, lifecycle_state, start_date, target_date } = req.body;
+
+        // --- VERSIONING LOGIC START ---
+        // 1. Calculate diffs
+        const changes = {};
+        if (title && title !== oldData.title) changes.title = { from: oldData.title, to: title };
+        if (context && context !== oldData.context) changes.context = { from: oldData.context, to: context };
+        if (current_confidence !== undefined && current_confidence !== oldData.current_confidence) {
+            changes.confidence = { from: oldData.current_confidence, to: current_confidence };
+        }
+        if (risk_level && risk_level !== oldData.risk_level) changes.risk = { from: oldData.risk_level, to: risk_level };
+        if (lifecycle_state && lifecycle_state !== oldData.lifecycle_state) changes.state = { from: oldData.lifecycle_state, to: lifecycle_state };
+
+        // 2. Create version snapshot if there are meaningful changes
+        if (Object.keys(changes).length > 0) {
+            const lastVersion = await DecisionVersion.findOne({
+                where: { decision_id: id },
+                order: [['version_number', 'DESC']]
+            });
+            const nextVersionNumber = (lastVersion?.version_number || 0) + 1;
+
+            await DecisionVersion.create({
+                decision_id: id,
+                version_number: nextVersionNumber,
+                snapshot_json: oldData,
+                changed_fields_json: changes,
+                confidence_before: oldData.current_confidence,
+                confidence_after: current_confidence !== undefined ? current_confidence : oldData.current_confidence,
+                created_by: 'System' // Placeholder until auth is fully integrated
+            });
+        }
+        // --- VERSIONING LOGIC END ---
+
+        // Update basic fields
+        await decision.update({
+            title: title !== undefined ? title : decision.title,
+            context: context !== undefined ? context : decision.context,
+            current_confidence: current_confidence !== undefined ? current_confidence : decision.current_confidence,
+            risk_level: risk_level !== undefined ? risk_level : decision.risk_level,
+            impact_level: impact_level !== undefined ? impact_level : decision.impact_level,
+            lifecycle_state: lifecycle_state !== undefined ? lifecycle_state : decision.lifecycle_state,
+            start_date: start_date !== undefined ? start_date : decision.start_date,
+            target_date: target_date !== undefined ? target_date : decision.target_date
+        });
+
+        // Track changes in history (Text summary for timeline)
+        const historyChanges = [];
+        if (changes.title) historyChanges.push(`Title changed from "${changes.title.from}" to "${changes.title.to}"`);
+        if (changes.confidence) historyChanges.push(`Confidence changed from ${changes.confidence.from}% to ${changes.confidence.to}%`);
+        if (changes.risk) historyChanges.push(`Risk changed from ${changes.risk.from} to ${changes.risk.to}`);
+
+        await DecisionHistory.create({
+            decision_id: id,
+            event_type: 'UPDATE',
+            description: historyChanges.length > 0 ? historyChanges.join('; ') : 'Decision updated'
+        });
+
+        // Trigger health recalculation if confidence or dates changed
+        if (current_confidence !== undefined || start_date || target_date) {
+            await healthService.updateDecisionHealth(id);
+        }
+
+        res.json({ success: true, data: decision });
+    } catch (err) {
+        console.error('Update Decision Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.createDecision = async (req, res) => {
+    try {
+        const decision = await Decision.create(req.body);
+        await DecisionHistory.create({
+            decision_id: decision.id,
+            event_type: 'CREATED',
+            description: 'Decision created via API'
+        });
+        res.status(201).json({ success: true, data: decision });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
+
+// Reaffirm Decision
+exports.reaffirmDecision = async (req, res) => {
+    try {
+        const decision = await Decision.findByPk(req.params.id);
+        if (!decision) {
+            return res.status(404).json({ success: false, message: 'Decision not found' });
+        }
+
+        // Update last reviewed date
+        await decision.update({ last_reviewed_at: new Date() });
+
+        // Add history event
+        await DecisionHistory.create({
+            decision_id: decision.id,
+            event_type: 'REAFFIRMED',
+            description: 'Decision reaffirmed - confidence remains strong'
+        });
+
+        res.json({ success: true, message: 'Decision reaffirmed' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Add Review Note
+exports.addNote = async (req, res) => {
+    try {
+        const { note, review_tag } = req.body;
+        if (!note) {
+            return res.status(400).json({ success: false, message: 'Note is required' });
+        }
+
+        const decision = await Decision.findByPk(req.params.id);
+        if (!decision) {
+            return res.status(404).json({ success: false, message: 'Decision not found' });
+        }
+
+        // Add tag prefix if provided
+        let finalNote = note;
+        if (review_tag) {
+            finalNote = `[${review_tag}] ${note}`;
+        }
+
+        // Add history event
+        await DecisionHistory.create({
+            decision_id: decision.id,
+            event_type: 'NOTE',
+            description: finalNote
+        });
+
+        res.json({ success: true, message: 'Note added' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Mark as Reviewed
+exports.markReviewed = async (req, res) => {
+    try {
+        const decision = await Decision.findByPk(req.params.id);
+        if (!decision) {
+            return res.status(404).json({ success: false, message: 'Decision not found' });
+        }
+
+        const now = new Date();
+
+        // Use provided review date or default to 90 days from now
+        let nextReview;
+        if (req.body.reviewDueDate) {
+            nextReview = new Date(req.body.reviewDueDate);
+        } else {
+            nextReview = new Date(now);
+            nextReview.setDate(nextReview.getDate() + 90);
+        }
+
+        // Update review dates
+        await decision.update({
+            last_reviewed_at: now,
+            review_due_date: nextReview
+        });
+
+        // Add history event
+        await DecisionHistory.create({
+            decision_id: decision.id,
+            event_type: 'REVIEWED',
+            description: req.body.reviewDueDate
+                ? `Marked as reviewed. Next review: ${nextReview.toLocaleDateString()}`
+                : 'Marked as reviewed - next review in 90 days'
+        });
+
+        res.json({ success: true, message: 'Marked as reviewed' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Update Assumptions
+exports.updateAssumptions = async (req, res) => {
+    try {
+        const { assumptions } = req.body;
+        if (!assumptions || !Array.isArray(assumptions)) {
+            return res.status(400).json({ success: false, message: 'Assumptions array is required' });
+        }
+
+        const decision = await Decision.findByPk(req.params.id);
+        if (!decision) {
+            return res.status(404).json({ success: false, message: 'Decision not found' });
+        }
+
+        // Delete existing assumptions
+        await Assumption.destroy({ where: { decision_id: decision.id } });
+
+        // Create new assumptions
+        const newAssumptions = await Promise.all(
+            assumptions.map(text =>
+                Assumption.create({
+                    decision_id: decision.id,
+                    assumption_text: text,
+                    is_active: true
+                })
+            )
+        );
+
+        // Add history event
+        await DecisionHistory.create({
+            decision_id: decision.id,
+            event_type: 'UPDATE',
+            description: `Assumptions updated (${assumptions.length} total)`
+        });
+
+        res.json({ success: true, data: newAssumptions });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Create Sub-Decision
+exports.createSubDecision = async (req, res) => {
+    try {
+        const { parentId } = req.params;
+        const { title, context, weight = 1, status = 'Pending' } = req.body;
+
+        if (!parentId) return res.status(400).json({ success: false, message: 'Parent ID required' });
+
+        // 1. Create Decision Record
+        const decision = await Decision.create({
+            title,
+            context,
+            decision_type: 'sub', // or SUB_DECISION
+            parent_id: parentId,
+            lifecycle_state: 'Active'
+        });
+
+        // 2. Create Tracking Record
+        await require('../models').SubDecisionTracking.create({
+            sub_decision_id: decision.id,
+            weight,
+            status,
+            completion_percentage: status === 'Completed' ? 100 : 0
+        });
+
+        // 3. Recalculate Parent
+        await require('../services/calculationService').recalculateMainDecision(parentId);
+
+        res.status(201).json({ success: true, data: decision });
+
+    } catch (err) {
+        console.error('Create Sub Decision Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Update Sub-Decision Progress
+exports.updateProgress = async (req, res) => {
+    try {
+        const { id } = req.params; // Sub-decision ID
+        const { completion_percentage, status, weight } = req.body;
+
+        const tracking = await require('../models').SubDecisionTracking.findOne({ where: { sub_decision_id: id } });
+        const decision = await Decision.findByPk(id);
+
+        if (!decision) return res.status(404).json({ success: false, message: 'Decision not found' });
+
+        if (!tracking) {
+            // Create if missing (migration safety)
+            await require('../models').SubDecisionTracking.create({
+                sub_decision_id: id,
+                completion_percentage: completion_percentage || 0,
+                status: status || 'Pending',
+                weight: weight || 1
+            });
+        } else {
+            await tracking.update({
+                completion_percentage: completion_percentage !== undefined ? completion_percentage : tracking.completion_percentage,
+                status: status || tracking.status,
+                weight: weight !== undefined ? weight : tracking.weight
+            });
+        }
+
+        // Recalculate Parent
+        if (decision.parent_id) {
+            await require('../services/calculationService').recalculateMainDecision(decision.parent_id);
+        }
+
+        res.json({ success: true, message: 'Progress updated' });
+
+    } catch (err) {
+        console.error('Update Progress Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Helper for recursive deletion
+const deleteDecisionRecursive = async (id, t) => {
+    // 1. Find children
+    const children = await Decision.findAll({ where: { parent_id: id }, transaction: t });
+    for (const child of children) {
+        await deleteDecisionRecursive(child.id, t);
+    }
+
+    // 2. Delete Dependencies
+    await DecisionRelation.destroy({
+        where: {
+            [require('sequelize').Op.or]: [{ source_decision_id: id }, { target_decision_id: id }]
+        },
+        transaction: t
+    });
+
+    await require('../models').DecisionEdge.destroy({ where: { decision_id: id }, transaction: t });
+    await require('../models').DecisionNode.destroy({ where: { decision_id: id }, transaction: t });
+    await require('../models').SubDecisionTracking.destroy({ where: { sub_decision_id: id }, transaction: t });
+    await DecisionHistory.destroy({ where: { decision_id: id }, transaction: t });
+    await Assumption.destroy({ where: { decision_id: id }, transaction: t });
+    await require('../models').DecisionReview.destroy({ where: { decision_id: id }, transaction: t });
+    await require('../models').DecisionProgressHistory.destroy({ where: { decision_id: id }, transaction: t });
+
+    // 3. Delete Decision
+    await Decision.destroy({ where: { id: id }, transaction: t });
+};
+
+// Delete Decision
+exports.deleteDecision = async (req, res) => {
+    const t = await require('../models').sequelize.transaction();
+    try {
+        const { id } = req.params;
+        const decision = await Decision.findByPk(id);
+
+        if (!decision) {
+            await t.rollback();
+            return res.status(404).json({ success: false, message: 'Decision not found' });
+        }
+
+        await deleteDecisionRecursive(id, t);
+
+        await t.commit();
+        res.json({ success: true, message: 'Decision and all sub-decisions deleted successfully' });
+
+    } catch (err) {
+        await t.rollback();
+        console.error('Delete Decision Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// --- New Endpoint: Review Decision (Complete Review) ---
+exports.reviewDecision = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { notes, status = 'Completed' } = req.body;
+
+        const decision = await Decision.findByPk(id);
+        if (!decision) return res.status(404).json({ success: false, message: 'Decision not found' });
+
+        // Create Review Log
+        await require('../models').DecisionReview.create({
+            decision_id: id,
+            review_date: new Date(),
+            status,
+            notes
+        });
+
+        // Update Decision Last Review Date
+        await decision.update({
+            last_reviewed_at: new Date()
+        });
+
+        // Trigger Health Update (confidence might boost)
+        const newHealth = await healthService.updateDecisionHealth(id);
+
+        res.json({ success: true, message: 'Review completed', data: newHealth });
+
+    } catch (err) {
+        console.error('Review Decision Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// --- New Endpoint: Trigger Daily Update (Simulation) ---
+exports.triggerDailyUpdate = async (req, res) => {
+    try {
+        console.log('[Cron] Starting Daily Health Update...');
+        const decisions = await Decision.findAll({ where: { parent_id: null } }); // Only Update Main Decisions (Cascade logic handles subs if needed, but health is mostly parent concept)
+
+        const results = [];
+        for (const decision of decisions) {
+            console.log(`[Cron] Updating ${decision.title}...`);
+            // Recalculate progress first (in case subs changed without trigger? Unlikely but safe)
+            await require('../services/calculationService').recalculateMainDecision(decision.id);
+            // Then Health
+            const health = await healthService.updateDecisionHealth(decision.id);
+            results.push({ id: decision.id, title: decision.title, health });
+        }
+
+        res.json({ success: true, message: 'Daily update completed', results });
+
+    } catch (err) {
+        console.error('Trigger Update Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.getDecisionById = async (req, res) => {
+    try {
+        console.log(`[API] Fetching decision with ID: ${req.params.id}`);
+
+        const decision = await Decision.findByPk(req.params.id, {
+            include: [
+                { model: Assumption, as: 'assumptions' },
+                { model: DecisionHistory, as: 'history' },
+                { model: Decision, as: 'parent' },
+                { model: require('../models').SubDecisionTracking, as: 'tracking' },
+                {
+                    model: Decision,
+                    as: 'children',
+                    attributes: ['id', 'title', 'lifecycle_state', 'current_confidence', 'risk_level', 'progress_percentage', 'start_date', 'target_date', 'health_score'],
+                    include: [{ model: require('../models').SubDecisionTracking, as: 'tracking' }]
+                }
+            ]
+        });
+
+        if (!decision) {
+            return res.status(404).json({
+                success: false,
+                message: 'Decision not found'
+            });
+        }
+
+        // Fetch History Graph Data
+        const progressHistory = await require('../models').DecisionProgressHistory.findAll({
+            where: { decision_id: decision.id },
+            order: [['recorded_at', 'ASC']],
+            limit: 30 // Last 30 points
+        });
+
+        // Fetch Reviews
+        const reviews = await require('../models').DecisionReview.findAll({
+            where: { decision_id: decision.id },
+            order: [['review_date', 'DESC']]
+        });
+
+        // Dynamic Health Calc (Read-only check, doesn't update DB on GET usually, but good for real-time VIEW)
+        // Note: For performance, we might just rely on stored fields, but let's calc for "Live" status
+        const { healthScore, newHealthStatus, conflicts, logEvents, timeStatus } = await healthService.updateDecisionHealth(decision.id);
+
+        res.json({
+            success: true,
+            data: {
+                ...decision.toJSON(),
+                calculated_confidence: decision.current_confidence,
+                calculated_health: {
+                    score: healthScore,
+                    status: newHealthStatus,
+                    time_status: timeStatus,
+                    conflict_count: conflicts,
+                    log_events: logEvents
+                },
+                progress_history: progressHistory,
+                reviews: reviews
+            }
+        });
+    } catch (err) {
+        console.error('[API] Error fetching decision:', err.message);
+        console.error('[API] Stack trace:', err.stack);
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+};
+
+// Edit a single Assumption (with versioning)
+exports.editAssumption = async (req, res) => {
+    try {
+        const { id, assumptionId } = req.params;
+        const { text } = req.body;
+
+        if (!text || !text.trim()) {
+            return res.status(400).json({ success: false, message: 'Assumption text is required' });
+        }
+
+        const decision = await Decision.findByPk(id, {
+            include: [{ model: Assumption, as: 'assumptions' }]
+        });
+        if (!decision) return res.status(404).json({ success: false, message: 'Decision not found' });
+
+        const assumption = await Assumption.findByPk(assumptionId);
+        if (!assumption || assumption.decision_id !== id) {
+            return res.status(404).json({ success: false, message: 'Assumption not found' });
+        }
+
+        const oldText = assumption.assumption_text;
+
+        // --- Versioning: snapshot before change ---
+        const oldData = {
+            title: decision.title,
+            context: decision.context,
+            current_confidence: decision.current_confidence,
+            risk_level: decision.risk_level,
+            lifecycle_state: decision.lifecycle_state,
+            assumptions: (decision.assumptions || []).map(a => a.assumption_text)
+        };
+
+        const lastVersion = await DecisionVersion.findOne({
+            where: { decision_id: id },
+            order: [['version_number', 'DESC']]
+        });
+        const nextVersion = (lastVersion?.version_number || 0) + 1;
+
+        await DecisionVersion.create({
+            decision_id: id,
+            version_number: nextVersion,
+            snapshot_json: JSON.stringify(oldData),
+            changed_fields_json: JSON.stringify({
+                assumption_edited: { from: oldText, to: text.trim() }
+            }),
+            confidence_before: decision.current_confidence,
+            confidence_after: decision.current_confidence,
+            created_by: 'System'
+        });
+
+        // --- Perform the edit ---
+        await assumption.update({ assumption_text: text.trim() });
+
+        await DecisionHistory.create({
+            decision_id: id,
+            event_type: 'UPDATE',
+            description: `Assumption edited: "${oldText}" → "${text.trim()}"`
+        });
+
+        res.json({ success: true, data: assumption });
+    } catch (err) {
+        console.error('Edit Assumption Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Delete a single Assumption (with versioning)
+exports.deleteAssumption = async (req, res) => {
+    try {
+        const { id, assumptionId } = req.params;
+
+        const decision = await Decision.findByPk(id, {
+            include: [{ model: Assumption, as: 'assumptions' }]
+        });
+        if (!decision) return res.status(404).json({ success: false, message: 'Decision not found' });
+
+        const assumption = await Assumption.findByPk(assumptionId);
+        if (!assumption || assumption.decision_id !== id) {
+            return res.status(404).json({ success: false, message: 'Assumption not found' });
+        }
+
+        const deletedText = assumption.assumption_text;
+
+        // --- Versioning: snapshot before change ---
+        const oldData = {
+            title: decision.title,
+            context: decision.context,
+            current_confidence: decision.current_confidence,
+            risk_level: decision.risk_level,
+            lifecycle_state: decision.lifecycle_state,
+            assumptions: (decision.assumptions || []).map(a => a.assumption_text)
+        };
+
+        const lastVersion = await DecisionVersion.findOne({
+            where: { decision_id: id },
+            order: [['version_number', 'DESC']]
+        });
+        const nextVersion = (lastVersion?.version_number || 0) + 1;
+
+        await DecisionVersion.create({
+            decision_id: id,
+            version_number: nextVersion,
+            snapshot_json: JSON.stringify(oldData),
+            changed_fields_json: JSON.stringify({
+                assumption_deleted: { text: deletedText }
+            }),
+            confidence_before: decision.current_confidence,
+            confidence_after: decision.current_confidence,
+            created_by: 'System'
+        });
+
+        // --- Perform the delete ---
+        await assumption.destroy();
+
+        await DecisionHistory.create({
+            decision_id: id,
+            event_type: 'UPDATE',
+            description: `Assumption deleted: "${deletedText}"`
+        });
+
+        res.json({ success: true, message: 'Assumption deleted' });
+    } catch (err) {
+        console.error('Delete Assumption Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};

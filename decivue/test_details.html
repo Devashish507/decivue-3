@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Decision Details</title>
+</head>
+<body>
+    <h1>Testing Decision Details API</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Get a decision ID first
+        fetch('http://localhost:5000/api/decisions')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.data.length > 0) {
+                    const decisionId = data.data[0].id;
+                    document.getElementById('result').innerHTML = `
+                        <p>Found ${data.data.length} decisions</p>
+                        <p>Testing with ID: ${decisionId}</p>
+                        <p><a href="http://localhost:5174/decisions/${decisionId}" target="_blank">
+                            Click to open Decision Details in new tab
+                        </a></p>
+                    `;
+                    
+                    // Also test the API directly
+                    fetch(`http://localhost:5000/api/decisions/${decisionId}`)
+                        .then(r => r.json())
+                        .then(detail => {
+                            document.getElementById('result').innerHTML += `
+                                <hr>
+                                <h2>API Response:</h2>
+                                <pre>${JSON.stringify(detail, null, 2)}</pre>
+                            `;
+                        });
+                }
+            })
+            .catch(err => {
+                document.getElementById('result').innerHTML = `Error: ${err.message}`;
+            });
+    </script>
+</body>
+</html>
