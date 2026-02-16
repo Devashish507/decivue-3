@@ -374,6 +374,12 @@ export const decisionService = {
     deleteAssumption: async (decisionId, assumptionId) => {
         const response = await api.delete(`/${decisionId}/assumptions/${assumptionId}`);
         return response.data;
+    },
+
+    // Conflict Detection
+    getConflicts: async (id) => {
+        const response = await api.get(`/${id}/conflicts`);
+        return response.data;
     }
 };
 

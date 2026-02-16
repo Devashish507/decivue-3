@@ -3,6 +3,7 @@ const treeService = require('../services/treeService');
 const healthService = require('../services/healthService');
 const reviewIntelligenceService = require('../services/reviewIntelligenceService');
 const { Op } = require('sequelize');
+const conflictDetectionService = require('../services/conflictDetectionService');
 
 exports.getAllDecisions = async (req, res) => {
     try {
@@ -275,6 +276,20 @@ exports.updateDecision = async (req, res) => {
         // Trigger review intelligence  recalculation
         await reviewIntelligenceService.updateReviewIntelligence(id);
 
+        // Auto-detect confidence-based conflicts on update
+        if (current_confidence !== undefined) {
+            try {
+                console.log('[CONFLICT] Running automatic conflict detection after update...');
+                const _cds = require('../services/conflictDetectionService');
+                const conflicts = await _cds.detectAndInsertConfidenceConflicts(id);
+                if (conflicts.length > 0) {
+                    console.log(`[CONFLICT] ${conflicts.length} new conflict(s) detected`);
+                }
+            } catch (conflictError) {
+                console.error('[CONFLICT] Failed to detect conflicts:', conflictError);
+            }
+        }
+
         res.json({ success: true, data: decision });
     } catch (err) {
         console.error('Update Decision Error:', err);
@@ -315,6 +330,19 @@ exports.createDecision = async (req, res) => {
         } catch (reviewError) {
             console.error('[REVIEW] ❌ Failed to calculate review intelligence:', reviewError);
             // Don't fail the request, but log the error
+        }
+
+        // Auto-detect confidence-based conflicts
+        try {
+            console.log('[CONFLICT] Running automatic conflict detection...');
+            const _cds = require('../services/conflictDetectionService');
+            const conflicts = await _cds.detectAndInsertConfidenceConflicts(decision.id);
+            if (conflicts.length > 0) {
+                console.log(`[CONFLICT] ${conflicts.length} conflict(s) detected and inserted`);
+                await decision.reload();
+            }
+        } catch (conflictError) {
+            console.error('[CONFLICT] Failed to detect conflicts:', conflictError);
         }
 
         res.status(201).json({ success: true, data: decision });
@@ -963,6 +991,23 @@ exports.getReviewAlerts = async (req, res) => {
 
     } catch (err) {
         console.error('Get Review Alerts Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Get Conflicts for a Decision
+exports.getConflicts = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const cds = require('../services/conflictDetectionService');
+        const conflicts = await cds.getConflictsForDecision(id);
+        res.json({
+            success: true,
+            data: conflicts,
+            count: conflicts.length
+        });
+    } catch (err) {
+        console.error('Get Conflicts Error:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 };

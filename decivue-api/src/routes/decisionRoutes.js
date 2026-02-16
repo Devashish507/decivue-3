@@ -33,6 +33,9 @@ router.put('/:id', decisionController.updateDecision); // Added Edit/Update
 router.delete('/:id', decisionController.deleteDecision); // Added Delete
 router.get('/:id/tree', decisionController.getDecisionTree);
 
+// Conflict detection
+router.get('/:id/conflicts', decisionController.getConflicts);
+
 // Relationship routes
 router.get('/:id/relationships', relationshipController.getRelationships);
 router.post('/:id/relationships', relationshipController.createRelationship);

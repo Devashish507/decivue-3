@@ -114,6 +114,18 @@ exports.createDecisionFromWizard = async (req, res) => {
         // Calculate initial health
         const healthResult = await healthService.calculateHealth(decision);
 
+        // Auto-detect confidence-based conflicts
+        let detectedConflicts = [];
+        try {
+            console.log('[Wizard] Running automatic conflict detection...');
+            detectedConflicts = await conflictDetectionService.detectAndInsertConfidenceConflicts(decision.id);
+            if (detectedConflicts.length > 0) {
+                console.log(`[Wizard] ⚠️ ${detectedConflicts.length} conflict(s) auto-detected`);
+            }
+        } catch (conflictError) {
+            console.error('[Wizard] ❌ Conflict detection failed:', conflictError);
+        }
+
         // Return complete decision
         const completeDecision = {
             ...decision.toJSON(),
@@ -123,7 +135,8 @@ exports.createDecisionFromWizard = async (req, res) => {
                 conflict_count: healthResult.conflicts
             },
             reasoning_tree: tree,
-            relationships: wizardData.relationships || []
+            relationships: wizardData.relationships || [],
+            detected_conflicts: detectedConflicts
         };
 
         res.status(201).json({
