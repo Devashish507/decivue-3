@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decivue - Feature Documentation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.7;
+            background: #fff;
+        }
+
+        .page { max-width: 800px; margin: 0 auto; padding: 60px 50px; }
+
+        /* Cover Page */
+        .cover {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            color: white;
+            padding: 60px;
+            page-break-after: always;
+        }
+        .cover-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
+        }
+        .cover h1 {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            margin-bottom: 12px;
+        }
+        .cover .subtitle {
+            font-size: 20px;
+            font-weight: 300;
+            color: #94a3b8;
+            margin-bottom: 50px;
+        }
+        .cover .meta {
+            font-size: 14px;
+            color: #64748b;
+            border-top: 1px solid #334155;
+            padding-top: 30px;
+            margin-top: auto;
+        }
+        .cover .meta span { display: block; margin-bottom: 6px; }
+
+        /* Section Styling */
+        .section { page-break-before: always; padding-top: 40px; }
+        .section:first-of-type { page-break-before: avoid; }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #3b82f6;
+            letter-spacing: -0.5px;
+        }
+
+        h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 28px 0 14px;
+        }
+
+        h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #334155;
+            margin: 18px 0 10px;
+        }
+
+        p {
+            margin-bottom: 14px;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        ul, ol {
+            margin: 10px 0 18px 24px;
+            color: #374151;
+            font-size: 14px;
+        }
+        li { margin-bottom: 6px; }
+
+        /* Feature Card */
+        .feature-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 18px 0;
+            page-break-inside: avoid;
+        }
+        .feature-card h3 {
+            margin-top: 0;
+            color: #1e40af;
+            font-size: 18px;
+        }
+        .feature-card p { margin-bottom: 8px; }
+
+        /* Tag */
+        .tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 6px;
+            margin-bottom: 8px;
+        }
+        .tag-frontend { background: #dbeafe; color: #1e40af; }
+        .tag-backend { background: #dcfce7; color: #166534; }
+        .tag-ai { background: #f3e8ff; color: #6b21a8; }
+        .tag-db { background: #fff7ed; color: #c2410c; }
+        .tag-realtime { background: #fce7f3; color: #be185d; }
+
+        /* Tech Stack Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 24px;
+            font-size: 13px;
+        }
+        th {
+            background: #1e293b;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #374151;
+        }
+        tr:nth-child(even) td { background: #f8fafc; }
+
+        /* Architecture Diagram */
+        .arch-box {
+            background: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .arch-layer {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 14px 20px;
+            margin: 8px 0;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .arch-arrow {
+            color: #3b82f6;
+            font-size: 20px;
+            margin: 4px 0;
+        }
+
+        /* TOC */
+        .toc {
+            page-break-after: always;
+            padding-top: 60px;
+        }
+        .toc h2 { border-bottom-color: #64748b; }
+        .toc-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dotted #cbd5e1;
+            font-size: 15px;
+            color: #334155;
+        }
+        .toc-item span:first-child { font-weight: 500; }
+        .toc-item span:last-child { color: #64748b; font-weight: 600; }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-box .number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #1e40af;
+        }
+        .stat-box .label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media print {
+            .page { padding: 40px 50px; }
+            .cover { min-height: auto; padding: 100px 50px; }
+            .section { page-break-before: always; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+    <div class="cover-logo">D</div>
+    <h1>Decivue</h1>
+    <p class="subtitle">Decision Intelligence Platform — Feature Documentation</p>
+    <div class="meta">
+        <span><strong>Version:</strong> 1.0</span>
+        <span><strong>Date:</strong> February 17, 2026</span>
+        <span><strong>Classification:</strong> Internal Documentation</span>
+    </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="page toc">
+    <h2>Table of Contents</h2>
+    <div class="toc-item"><span>1. Executive Summary</span><span>3</span></div>
+    <div class="toc-item"><span>2. Technology Stack</span><span>4</span></div>
+    <div class="toc-item"><span>3. System Architecture</span><span>5</span></div>
+    <div class="toc-item"><span>4. Core Features</span><span>6</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.1 Dashboard & Analytics</span><span>6</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.2 Decision Creation Wizard</span><span>7</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.3 Decision Detail View</span><span>8</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.4 Decision Library</span><span>9</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.5 Visual Decision Tree</span><span>10</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.6 Decision Health Monitoring</span><span>11</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.7 Conflict Detection Engine</span><span>12</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.8 Relationship & Dependency Graph</span><span>13</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.9 Kanban Board</span><span>14</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.10 Team Management</span><span>15</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.11 Version History & Audit Trail</span><span>16</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.12 AI Decision Assistant</span><span>17</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.13 Governance & Review Workflows</span><span>18</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.14 Reasoning Tree Generator</span><span>19</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.15 Attachments & File Management</span><span>20</span></div>
+    <div class="toc-item"><span>5. Database Schema Overview</span><span>21</span></div>
+    <div class="toc-item"><span>6. API Endpoints Reference</span><span>22</span></div>
+    <div class="toc-item"><span>7. Project Statistics</span><span>23</span></div>
+</div>
+
+<!-- 1. EXECUTIVE SUMMARY -->
+<div class="page section">
+    <h2>1. Executive Summary</h2>
+    <p>
+        <strong>Decivue</strong> is a full-stack Decision Intelligence Platform that enables organizations to 
+        make, track, and govern strategic decisions with clarity and confidence. It goes beyond simple task 
+        management by adding <strong>health monitoring</strong>, <strong>conflict detection</strong>, 
+        <strong>AI-powered insights</strong>, <strong>relationship mapping</strong>, and <strong>governance workflows</strong>
+        to every decision.
+    </p>
+    <p>
+        Unlike traditional tools that treat decisions as static records, Decivue treats them as <strong>living entities</strong> 
+        that evolve over time — tracking confidence drift, detecting assumption violations, monitoring review schedules, 
+        and surfacing conflicts before they become problems.
+    </p>
+
+    <h3>Key Differentiators</h3>
+    <ul>
+        <li><strong>Decision Health Score:</strong> A dynamic, multi-factor score that degrades over time based on confidence, time decay, conflicts, and assumption validity</li>
+        <li><strong>Conflict Detection Engine:</strong> Automatically detects resource, budget, timeline, and risk strategy conflicts when decisions are linked</li>
+        <li><strong>Visual Decision Tree:</strong> An interactive D3-based tree showing hierarchical relationships with health-colored nodes</li>
+        <li><strong>AI Decision Assistant:</strong> Context-aware chatbot providing analysis and recommendations for each decision</li>
+        <li><strong>Governance Workflows:</strong> Built-in approval, review, and reaffirmation workflows with audit logging</li>
+        <li><strong>Kanban Board:</strong> Drag-and-drop workflow management with color-coded columns for decision lifecycle tracking</li>
+    </ul>
+</div>
+
+<!-- 2. TECHNOLOGY STACK -->
+<div class="page section">
+    <h2>2. Technology Stack</h2>
+    
+    <h3>Frontend</h3>
+    <table>
+        <tr><th>Technology</th><th>Purpose</th></tr>
+        <tr><td>React 18</td><td>Core UI framework with hooks and functional components</td></tr>
+        <tr><td>Vite</td><td>Build tool and development server</td></tr>
+        <tr><td>Tailwind CSS</td><td>Utility-first CSS framework for responsive design</td></tr>
+        <tr><td>React Router v6</td><td>Client-side routing and navigation</td></tr>
+        <tr><td>Framer Motion</td><td>Animations, transitions, and gesture handling</td></tr>
+        <tr><td>D3.js</td><td>Force-directed graph for relationship visualization</td></tr>
+        <tr><td>@dnd-kit</td><td>Drag-and-drop library for Kanban board</td></tr>
+        <tr><td>Lucide React</td><td>Modern icon library</td></tr>
+        <tr><td>Axios</td><td>HTTP client for API communication</td></tr>
+    </table>
+
+    <h3>Backend</h3>
+    <table>
+        <tr><th>Technology</th><th>Purpose</th></tr>
+        <tr><td>Node.js</td><td>Server runtime environment</td></tr>
+        <tr><td>Express.js</td><td>Web framework for REST API</td></tr>
+        <tr><td>Sequelize ORM</td><td>Database abstraction and model management</td></tr>
+        <tr><td>PostgreSQL / SQLite</td><td>Relational database for persistence</td></tr>
+        <tr><td>dotenvx</td><td>Environment variable management</td></tr>
+        <tr><td>Multer</td><td>File upload handling for attachments</td></tr>
+        <tr><td>CORS</td><td>Cross-origin resource sharing middleware</td></tr>
+    </table>
+</div>
+
+<!-- 3. SYSTEM ARCHITECTURE -->
+<div class="page section">
+    <h2>3. System Architecture</h2>
+    <p>Decivue follows a clean <strong>3-tier architecture</strong> with clear separation between the presentation, business logic, and data layers.</p>
+    
+    <div class="arch-box">
+        <div class="arch-layer" style="background: #dbeafe; border-color: #3b82f6;">
+            <strong>🖥️ Frontend (React + Vite)</strong><br>
+            <small>Pages → Components → Hooks → API Service Layer</small>
+        </div>
+        <div class="arch-arrow">⬇ REST API (Axios) ⬇</div>
+        <div class="arch-layer" style="background: #dcfce7; border-color: #22c55e;">
+            <strong>⚙️ Backend (Express.js)</strong><br>
+            <small>Routes → Controllers → Services → Models</small>
+        </div>
+        <div class="arch-arrow">⬇ Sequelize ORM ⬇</div>
+        <div class="arch-layer" style="background: #fff7ed; border-color: #f97316;">
+            <strong>🗄️ Database (PostgreSQL)</strong><br>
+            <small>18 Models • Decision • Team • Health • Versions • Audit</small>
+        </div>
+    </div>
+
+    <h3>Backend Service Layer</h3>
+    <table>
+        <tr><th>Service</th><th>Responsibility</th></tr>
+        <tr><td>HealthService</td><td>Computes dynamic health scores based on confidence, time decay, conflicts, and assumptions</td></tr>
+        <tr><td>ConflictDetectionService</td><td>Detects resource, budget, timeline, and risk conflicts between linked decisions</td></tr>
+        <tr><td>ReviewIntelligenceService</td><td>Generates smart review alerts and overdue notifications for decision owners</td></tr>
+        <tr><td>ReasoningTreeGenerator</td><td>Builds visual reasoning trees (pros/cons/factors) for decision analysis</td></tr>
+        <tr><td>TreeService</td><td>Generates hierarchical decision tree data for the visual tree component</td></tr>
+        <tr><td>CalculationService</td><td>Handles risk scoring, option evaluation, and weighted calculations</td></tr>
+    </table>
+</div>
+
+<!-- 4. CORE FEATURES -->
+<div class="page section">
+    <h2>4. Core Features</h2>
+
+    <!-- 4.1 Dashboard -->
+    <div class="feature-card">
+        <h3>4.1 Dashboard & Analytics</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-backend">Backend</span>
+        <p>
+            The main dashboard provides a bird's-eye view of all organizational decisions with actionable insights 
+            and real-time health monitoring.
+        </p>
+        <h4>Key Capabilities</h4>
+        <ul>
+            <li><strong>Summary Statistics:</strong> Active decisions, under review, critical alerts, and average confidence displayed as stat cards</li>
+            <li><strong>Health Score Overview:</strong> Visual confidence gauge showing the aggregate health of all decisions</li>
+            <li><strong>Review Alerts:</strong> Smart alert cards highlighting overdue reviews, degrading confidence, and assumption violations</li>
+            <li><strong>Quick Navigation:</strong> Direct access to any decision, the visual tree, or the decision library</li>
+            <li><strong>Health Color Coding:</strong> Green (Healthy 70-100%), Yellow (At Risk 40-69%), Red (Critical 0-39%)</li>
+        </ul>
+    </div>
+
+    <!-- 4.2 Decision Creation -->
+    <div class="feature-card">
+        <h3>4.2 Decision Creation Wizard</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-backend">Backend</span>
+        <p>
+            A guided, multi-step wizard that walks users through creating a well-structured decision with all necessary context.
+        </p>
+        <h4>Wizard Steps</h4>
+        <ol>
+            <li><strong>Decision Statement:</strong> Title, detailed context/description, decision type (Strategic, Tactical, Operational, Risk Mitigation), category, and impact level</li>
+            <li><strong>Context & Assumptions:</strong> Dynamic assumption list — add, edit, remove assumptions that underpin the decision. Each assumption is tracked independently for validity monitoring</li>
+            <li><strong>Confidence & Risk:</strong> Set initial confidence score (0-100%), risk level, priority level (LOW/MEDIUM/HIGH/CRITICAL), and estimated cost/effort</li>
+            <li><strong>Review Settings:</strong> Configure review frequency (days), set target review date, lifecycle state, and governance requirements</li>
+        </ol>
+        <h4>Technical Details</h4>
+        <ul>
+            <li>Step-by-step validation prevents advancing without required fields</li>
+            <li>Real-time preview of decision data as it's entered</li>
+            <li>On submission, creates the Decision record + associated Assumption records + initial AuditLog entry</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page section">
+    <!-- 4.3 Decision Detail -->
+    <div class="feature-card">
+        <h3>4.3 Decision Detail View</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-backend">Backend</span>
+        <span class="tag tag-ai">AI</span>
+        <p>
+            The most comprehensive view in the platform — a tabbed interface showing every aspect of a decision's lifecycle.
+        </p>
+        <h4>Tabs</h4>
+        <ul>
+            <li><strong>Overview:</strong> Health panel with live score, confidence gauge, risk tags, lifecycle badges, owner/reviewer info, and governance status</li>
+            <li><strong>Sub-Decisions:</strong> Hierarchical breakdown into smaller actionable tasks with individual progress tracking and completion marking</li>
+            <li><strong>Timeline:</strong> Chronological history of all actions (creation, reviews, reaffirmations, notes, assumption changes) with relative timestamps</li>
+            <li><strong>Relationships:</strong> Interactive D3 force-directed graph showing decision dependencies, conflicts, and relationships with directional arrows and color coding</li>
+            <li><strong>Reasoning Tree:</strong> Auto-generated visual tree showing supporting factors, risks, considerations, and alternatives for the decision</li>
+            <li><strong>Versions:</strong> Full version history with diff comparison showing what changed between versions</li>
+            <li><strong>Attachments:</strong> Upload/download file attachments (documents, images, spreadsheets) linked to the decision</li>
+            <li><strong>Assistant:</strong> AI-powered chatbot providing contextual analysis and recommendations specific to this decision</li>
+        </ul>
+        <h4>Action Controls</h4>
+        <ul>
+            <li><strong>Reaffirm Decision:</strong> Reset review clock and boost confidence, creating a version snapshot</li>
+            <li><strong>Add Review Note:</strong> Append commentary to the decision timeline</li>
+            <li><strong>Update Assumptions:</strong> Add new assumptions with automatic versioning</li>
+            <li><strong>Mark Reviewed:</strong> Complete the review process and update lifecycle state</li>
+            <li><strong>Request Approval:</strong> Trigger governance approval workflow</li>
+            <li><strong>Edit/Delete Decision:</strong> Full CRUD with cascade deletion for sub-decisions</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page section">
+    <!-- 4.4 Decision Library -->
+    <div class="feature-card">
+        <h3>4.4 Decision Library</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <p>
+            A searchable, filterable library of all decisions with rich card previews and inline management.
+        </p>
+        <h4>Key Capabilities</h4>
+        <ul>
+            <li><strong>Search:</strong> Real-time search across decision titles and descriptions</li>
+            <li><strong>Filtering:</strong> Filter by lifecycle state (Draft, Active, Review, Closed)</li>
+            <li><strong>Decision Cards:</strong> Compact cards showing title, context preview, health status, risk level, confidence score, and tags</li>
+            <li><strong>Inline Add:</strong> Quick-add new decisions via the AddDecisionWizard modal</li>
+            <li><strong>Inline Edit:</strong> Edit decisions directly from the library via EditDecisionModal</li>
+            <li><strong>Animated Transitions:</strong> Smooth Framer Motion animations for list filtering and card appearance</li>
+        </ul>
+    </div>
+
+    <!-- 4.5 Visual Decision Tree -->
+    <div class="feature-card">
+        <h3>4.5 Visual Decision Tree</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-backend">Backend</span>
+        <span class="tag tag-realtime">Interactive</span>
+        <p>
+            A full-canvas, interactive decision tree visualization showing hierarchical relationships between all decisions.
+        </p>
+        <h4>Key Capabilities</h4>
+        <ul>
+            <li><strong>Hierarchical Layout:</strong> Parent-child decision relationships rendered as a tree with connecting edges</li>
+            <li><strong>Health-Colored Nodes:</strong> Each node is dynamically colored based on its health status (green/yellow/red)</li>
+            <li><strong>Decision Node Cards:</strong> Expandable cards showing title, confidence, health score, sub-decision count, and lifecycle state</li>
+            <li><strong>Conflict Edges:</strong> Special red dashed edges showing conflicting relationships between decisions</li>
+            <li><strong>Canvas Controls:</strong> Zoom, pan, fit-to-screen, and toggle between horizontal/vertical layouts</li>
+            <li><strong>Side Panel:</strong> Click any node to open a detail side panel with full decision information</li>
+            <li><strong>Add Sub-Decision:</strong> Create child decisions directly from the tree view</li>
+            <li><strong>Focus Mode:</strong> Dedicated full-screen focus page for analyzing a single decision branch</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page section">
+    <!-- 4.6 Decision Health -->
+    <div class="feature-card">
+        <h3>4.6 Decision Health Monitoring</h3>
+        <span class="tag tag-backend">Backend</span>
+        <span class="tag tag-ai">Algorithm</span>
+        <p>
+            A sophisticated multi-factor health scoring engine that treats every decision as a living entity requiring ongoing monitoring.
+        </p>
+        <h4>Health Score Components</h4>
+        <table>
+            <tr><th>Factor</th><th>Weight</th><th>Description</th></tr>
+            <tr><td>Base Confidence</td><td>40%</td><td>Initial confidence set during creation (0-100%)</td></tr>
+            <tr><td>Time Decay</td><td>25%</td><td>Score degrades over time since last review (configurable frequency)</td></tr>
+            <tr><td>Conflict Penalty</td><td>15%</td><td>Penalty for each active conflict relationship detected</td></tr>
+            <tr><td>Assumption Validity</td><td>10%</td><td>Score based on ratio of valid vs. broken assumptions</td></tr>
+            <tr><td>Review Recency</td><td>10%</td><td>Bonus for recently reviewed decisions, penalty for overdue ones</td></tr>
+        </table>
+        <h4>Health Statuses</h4>
+        <ul>
+            <li><strong>🟢 Healthy (70-100%):</strong> Decision is well-maintained and current</li>
+            <li><strong>🟡 At Risk (40-69%):</strong> Decision needs attention — review or assumption check recommended</li>
+            <li><strong>🔴 Critical (0-39%):</strong> Decision is stale, conflicted, or assumptions have broken down</li>
+        </ul>
+        <h4>Technical Implementation</h4>
+        <ul>
+            <li>Health is calculated deterministically from <code>initial_confidence</code> to prevent cumulative drift</li>
+            <li>Score is recalculated on every view and after any modification</li>
+            <li>Stored persistently in the <code>current_confidence</code> field for dashboard queries</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page section">
+    <!-- 4.7 Conflict Detection -->
+    <div class="feature-card">
+        <h3>4.7 Conflict Detection Engine</h3>
+        <span class="tag tag-backend">Backend</span>
+        <span class="tag tag-ai">Algorithm</span>
+        <p>
+            Automatically detects potential conflicts when decisions are linked together, surfacing warnings before they cause downstream problems.
+        </p>
+        <h4>Conflict Types Detected</h4>
+        <ul>
+            <li><strong>Resource Overlap:</strong> Two decisions targeting the same category with the same priority level, competing for shared resources</li>
+            <li><strong>Timeline Overlap:</strong> Review dates within 30 days of each other, creating review bottlenecks</li>
+            <li><strong>Budget Conflict:</strong> Multiple high-impact, high-priority decisions competing for budget allocation</li>
+            <li><strong>Opposite Risk Strategies:</strong> Conflicting risk mitigation approaches between linked decisions (CRITICAL severity)</li>
+            <li><strong>Conflicting Assumptions:</strong> Decisions with many assumptions flagged for manual cross-checking</li>
+        </ul>
+        <h4>Severity Levels</h4>
+        <ul>
+            <li><strong>CRITICAL:</strong> Opposite risk strategies — immediate attention required</li>
+            <li><strong>WARNING:</strong> Resource overlap or budget conflicts — should be reviewed</li>
+            <li><strong>INFO:</strong> Timeline proximity or assumption overlap — awareness only</li>
+        </ul>
+    </div>
+
+    <!-- 4.8 Relationships -->
+    <div class="feature-card">
+        <h3>4.8 Relationship & Dependency Graph</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-backend">Backend</span>
+        <span class="tag tag-realtime">Interactive</span>
+        <p>
+            An interactive D3.js force-directed graph showing relationships between decisions with directional arrows and relationship-type coloring.
+        </p>
+        <h4>Relationship Types</h4>
+        <ul>
+            <li><strong>DEPENDS_ON:</strong> Decision A cannot proceed without Decision B (blue links)</li>
+            <li><strong>ENABLES:</strong> Decision A enables or unblocks Decision B (green links)</li>
+            <li><strong>CONFLICTS_WITH:</strong> Decisions are in tension or opposition (red links)</li>
+            <li><strong>RELATED_TO:</strong> General association between decisions (gray links)</li>
+            <li><strong>SUPERSEDES:</strong> Decision A replaces or overrides Decision B (purple links)</li>
+        </ul>
+        <h4>Visualization Features</h4>
+        <ul>
+            <li>Draggable nodes with physics simulation</li>
+            <li>Directional arrows showing relationship direction</li>
+            <li>Color-coded nodes and edges by relationship type</li>
+            <li>Hover tooltips with decision details</li>
+            <li>Modal for adding new relationships with conflict pre-check</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page section">
+    <!-- 4.9 Kanban Board -->
+    <div class="feature-card">
+        <h3>4.9 Kanban Board</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-backend">Backend</span>
+        <span class="tag tag-realtime">Drag & Drop</span>
+        <p>
+            A full-screen, drag-and-drop Kanban board for managing decision workflows with color-coded columns.
+        </p>
+        <h4>Columns</h4>
+        <ul>
+            <li><strong>DECISIONS (Purple #A78BFA):</strong> All existing decisions — the backlog/pool</li>
+            <li><strong>TO-DO (Orange #F4A261):</strong> Decisions planned for action</li>
+            <li><strong>IN PROGRESS (Cyan #81D4E8):</strong> Decisions actively being worked on</li>
+            <li><strong>COMPLETED (Yellow #E9D66B):</strong> Resolved and closed decisions</li>
+        </ul>
+        <h4>Key Capabilities</h4>
+        <ul>
+            <li><strong>Drag & Drop:</strong> Smooth drag-and-drop between columns using @dnd-kit with pointer sensor and 5px activation distance</li>
+            <li><strong>Optimistic Updates:</strong> UI updates instantly on drop — API call runs in background without page refresh</li>
+            <li><strong>Colorful Cards:</strong> Each card inherits the column's background color for clear visual grouping</li>
+            <li><strong>Decision Titles:</strong> Cards display actual decision titles from the database (not risk labels)</li>
+            <li><strong>Full-Screen Mode:</strong> Sidebar automatically hides, content goes edge-to-edge via LayoutContext</li>
+            <li><strong>Back Navigation:</strong> Dedicated back arrow button to return to the workspace list view</li>
+            <li><strong>Drag Overlay:</strong> Rotated, scaled shadow card during drag for premium feel</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page section">
+    <!-- 4.10 Team Management -->
+    <div class="feature-card">
+        <h3>4.10 Team Management</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-backend">Backend</span>
+        <span class="tag tag-db">Database</span>
+        <p>
+            Full team workspace with member management, role assignment, and team-scoped decision views.
+        </p>
+        <h4>Team Dashboard Features</h4>
+        <ul>
+            <li><strong>Team Overview:</strong> Stats cards showing active decisions, under review, critical alerts, and average confidence per team</li>
+            <li><strong>Decision Grid:</strong> Responsive card grid (1/2/3 columns) showing team decisions with health badges</li>
+            <li><strong>View Toggle:</strong> Switch between List view and Kanban board view</li>
+            <li><strong>Member Avatars:</strong> Visual representation of team members with role badges</li>
+        </ul>
+        <h4>Member Management</h4>
+        <ul>
+            <li><strong>Roles:</strong> Owner, Reviewer, Contributor — each with different permissions</li>
+            <li><strong>Add/Remove Members:</strong> ManageMembersModal for team administration</li>
+            <li><strong>Decision Mapping:</strong> DecisionTeamMap links decisions to teams with designated owners and reviewers</li>
+        </ul>
+    </div>
+
+    <!-- 4.11 Version History -->
+    <div class="feature-card">
+        <h3>4.11 Version History & Audit Trail</h3>
+        <span class="tag tag-backend">Backend</span>
+        <span class="tag tag-db">Database</span>
+        <p>
+            Complete change tracking with version snapshots and detailed comparison capabilities.
+        </p>
+        <h4>Version Tracking</h4>
+        <ul>
+            <li><strong>Automatic Versioning:</strong> Every significant change (reaffirm, review, assumption edit) creates a numbered version snapshot</li>
+            <li><strong>Version Comparison:</strong> Side-by-side diff view showing what changed between any two versions</li>
+            <li><strong>Change Descriptions:</strong> Each version includes a human-readable description of what changed</li>
+            <li><strong>Snapshot Data:</strong> Full decision state captured in JSON for point-in-time recovery</li>
+        </ul>
+        <h4>Audit Logging</h4>
+        <ul>
+            <li><strong>Action Types:</strong> CREATE, UPDATE, REAFFIRM, REVIEW, NOTE_ADDED, ASSUMPTION_ADDED, ASSUMPTION_EDITED, ASSUMPTION_DELETED, PROGRESS_UPDATE, APPROVAL_REQUESTED</li>
+            <li><strong>User Attribution:</strong> Tracks who performed each action</li>
+            <li><strong>Timeline Integration:</strong> All audit events appear in the decision's timeline view</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page section">
+    <!-- 4.12 AI Assistant -->
+    <div class="feature-card">
+        <h3>4.12 AI Decision Assistant (Chatbot)</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-ai">AI</span>
+        <p>
+            A context-aware AI assistant embedded directly within each decision's detail view, providing analysis and recommendations.
+        </p>
+        <h4>Key Capabilities</h4>
+        <ul>
+            <li><strong>Inline Tab:</strong> Accessible as a dedicated "Assistant" tab within the decision detail page — no floating widgets</li>
+            <li><strong>Context-Aware:</strong> Receives the full decision context (title, description, assumptions, health score, relationships) for informed responses</li>
+            <li><strong>Analysis Types:</strong> Risk analysis, assumption validation, stakeholder impact assessment, timeline recommendations</li>
+            <li><strong>Chat Interface:</strong> Standard chat UI with message history, typing indicators, and formatted responses</li>
+            <li><strong>Decision-Scoped:</strong> Each decision has its own separate chat conversation</li>
+        </ul>
+    </div>
+
+    <!-- 4.13 Governance -->
+    <div class="feature-card">
+        <h3>4.13 Governance & Review Workflows</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-backend">Backend</span>
+        <p>
+            Built-in governance framework for decisions that require formal approval and periodic review cycles.
+        </p>
+        <h4>Governance Features</h4>
+        <ul>
+            <li><strong>Governance Badge:</strong> Visual indicator showing if a decision requires governance approval</li>
+            <li><strong>Governance Guard:</strong> Prevents certain actions until governance approval is obtained</li>
+            <li><strong>Governance Action Panel:</strong> Centralized panel for governance actions (approve, reject, escalate)</li>
+            <li><strong>Review Intelligence:</strong> Backend service that generates smart review alerts based on review frequency, last review date, and health status</li>
+            <li><strong>Review Alerts:</strong> Dashboard cards highlighting decisions that are overdue for review</li>
+            <li><strong>Approval Workflow:</strong> Request → Review → Approve/Reject flow with full audit trail</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page section">
+    <!-- 4.14 Reasoning Tree -->
+    <div class="feature-card">
+        <h3>4.14 Reasoning Tree Generator</h3>
+        <span class="tag tag-backend">Backend</span>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-ai">Algorithm</span>
+        <p>
+            Automatically generates a structured reasoning tree for any decision, breaking it down into supporting factors, risks, and alternatives.
+        </p>
+        <h4>Tree Structure</h4>
+        <ul>
+            <li><strong>Root Node:</strong> The decision statement itself</li>
+            <li><strong>Supporting Factors:</strong> Evidence and rationale in favor of the decision</li>
+            <li><strong>Risk Factors:</strong> Identified risks and potential downsides</li>
+            <li><strong>Assumptions:</strong> Key assumptions the decision depends on</li>
+            <li><strong>Alternatives:</strong> Other options that were considered</li>
+            <li><strong>Considerations:</strong> Contextual factors that influence the decision</li>
+        </ul>
+        <h4>Visualization</h4>
+        <ul>
+            <li>Expandable/collapsible tree nodes</li>
+            <li>Color-coded by category (green for supporting, red for risks, blue for considerations)</li>
+            <li>Interactive panel within the Decision Detail view</li>
+        </ul>
+    </div>
+
+    <!-- 4.15 Attachments -->
+    <div class="feature-card">
+        <h3>4.15 Attachments & File Management</h3>
+        <span class="tag tag-frontend">Frontend</span>
+        <span class="tag tag-backend">Backend</span>
+        <p>
+            Full file attachment system allowing documents, images, and spreadsheets to be linked to decisions.
+        </p>
+        <h4>Key Capabilities</h4>
+        <ul>
+            <li><strong>Upload:</strong> Drag-and-drop or click-to-upload file interface</li>
+            <li><strong>File Types:</strong> Supports documents (PDF, DOCX), images (PNG, JPG), spreadsheets (XLSX, CSV), and more</li>
+            <li><strong>File Preview:</strong> Preview images and documents inline</li>
+            <li><strong>Download:</strong> Direct download links for all attachments</li>
+            <li><strong>File Metadata:</strong> Tracks upload date, file size, MIME type, and uploader</li>
+            <li><strong>Backend Storage:</strong> Files stored on the server via Multer middleware with dedicated attachment routes</li>
+        </ul>
+    </div>
+</div>
+
+<!-- 5. DATABASE SCHEMA -->
+<div class="page section">
+    <h2>5. Database Schema Overview</h2>
+    <p>Decivue uses <strong>18 database models</strong> managed through Sequelize ORM with PostgreSQL.</p>
+    
+    <table>
+        <tr><th>Model</th><th>Purpose</th><th>Key Fields</th></tr>
+        <tr><td><strong>Decision</strong></td><td>Core decision record</td><td>title, statement, context, confidence, risk_level, lifecycle_state, health_score, category, priority</td></tr>
+        <tr><td><strong>Assumption</strong></td><td>Tracked assumptions per decision</td><td>text, validity_status, decision_id</td></tr>
+        <tr><td><strong>DecisionRelation</strong></td><td>Links between decisions</td><td>source_id, target_id, relationship_type, rationale</td></tr>
+        <tr><td><strong>DecisionHistory</strong></td><td>Change timeline entries</td><td>decision_id, action, details, performed_by</td></tr>
+        <tr><td><strong>DecisionVersion</strong></td><td>Version snapshots</td><td>decision_id, version_number, snapshot_data, change_description</td></tr>
+        <tr><td><strong>DecisionNode</strong></td><td>Tree canvas node positions</td><td>decision_id, position_x, position_y</td></tr>
+        <tr><td><strong>DecisionEdge</strong></td><td>Tree canvas edge connections</td><td>source_node_id, target_node_id, edge_type</td></tr>
+        <tr><td><strong>DecisionOption</strong></td><td>Alternative options evaluated</td><td>decision_id, option_text, score, pros, cons</td></tr>
+        <tr><td><strong>DecisionReview</strong></td><td>Review records</td><td>decision_id, reviewer, status, notes</td></tr>
+        <tr><td><strong>DecisionReviewHistory</strong></td><td>Detailed review history</td><td>decision_id, review_type, outcome, previous_confidence</td></tr>
+        <tr><td><strong>DecisionProgressHistory</strong></td><td>Progress tracking over time</td><td>decision_id, progress_percentage, timestamp</td></tr>
+        <tr><td><strong>SubDecisionTracking</strong></td><td>Sub-decision progress</td><td>parent_id, child_id, status, completion_date</td></tr>
+        <tr><td><strong>Attachment</strong></td><td>File attachments</td><td>decision_id, filename, filepath, mimetype, size</td></tr>
+        <tr><td><strong>AuditLog</strong></td><td>Complete audit trail</td><td>decision_id, action, performed_by, details, timestamp</td></tr>
+        <tr><td><strong>Team</strong></td><td>Team workspace</td><td>name, description</td></tr>
+        <tr><td><strong>TeamMember</strong></td><td>Team membership</td><td>team_id, user_id, user_name, role, user_avatar</td></tr>
+        <tr><td><strong>DecisionTeamMap</strong></td><td>Decision-to-team mapping</td><td>decision_id, team_id, owner_id, reviewer_id</td></tr>
+    </table>
+</div>
+
+<!-- 6. API ENDPOINTS -->
+<div class="page section">
+    <h2>6. API Endpoints Reference</h2>
+    
+    <h3>Decision Routes</h3>
+    <table>
+        <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+        <tr><td>GET</td><td>/api/decisions</td><td>List all decisions with health data</td></tr>
+        <tr><td>POST</td><td>/api/decisions</td><td>Create a new decision</td></tr>
+        <tr><td>GET</td><td>/api/decisions/:id</td><td>Get decision with full details</td></tr>
+        <tr><td>PUT</td><td>/api/decisions/:id</td><td>Update decision fields</td></tr>
+        <tr><td>DELETE</td><td>/api/decisions/:id</td><td>Delete decision (cascade)</td></tr>
+        <tr><td>POST</td><td>/api/decisions/:id/reaffirm</td><td>Reaffirm decision confidence</td></tr>
+        <tr><td>POST</td><td>/api/decisions/:id/note</td><td>Add review note</td></tr>
+        <tr><td>POST</td><td>/api/decisions/:id/mark-reviewed</td><td>Complete review</td></tr>
+        <tr><td>POST</td><td>/api/decisions/:id/review</td><td>Submit detailed review</td></tr>
+        <tr><td>POST</td><td>/api/decisions/:id/sub-decisions</td><td>Create sub-decision</td></tr>
+        <tr><td>PUT</td><td>/api/decisions/:id/progress</td><td>Update progress</td></tr>
+        <tr><td>POST</td><td>/api/decisions/:id/assumptions</td><td>Add assumption</td></tr>
+        <tr><td>PUT</td><td>/api/assumptions/:id</td><td>Edit assumption</td></tr>
+        <tr><td>DELETE</td><td>/api/assumptions/:id</td><td>Delete assumption</td></tr>
+        <tr><td>GET</td><td>/api/decisions/tree</td><td>Get decision tree data</td></tr>
+        <tr><td>GET</td><td>/api/decisions/review-alerts</td><td>Get review alerts</td></tr>
+    </table>
+
+    <h3>Attachment Routes</h3>
+    <table>
+        <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+        <tr><td>POST</td><td>/api/decisions/:id/attachments</td><td>Upload attachment</td></tr>
+        <tr><td>GET</td><td>/api/decisions/:id/attachments</td><td>List attachments</td></tr>
+        <tr><td>DELETE</td><td>/api/attachments/:id</td><td>Delete attachment</td></tr>
+    </table>
+
+    <h3>Team Routes</h3>
+    <table>
+        <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+        <tr><td>GET</td><td>/api/teams</td><td>List all teams</td></tr>
+        <tr><td>GET</td><td>/api/teams/:id</td><td>Get team with members & decisions</td></tr>
+        <tr><td>POST</td><td>/api/teams/:id/members</td><td>Add team member</td></tr>
+        <tr><td>DELETE</td><td>/api/teams/:id/members/:userId</td><td>Remove team member</td></tr>
+    </table>
+
+    <h3>Governance Routes</h3>
+    <table>
+        <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+        <tr><td>POST</td><td>/api/governance/:id/request-approval</td><td>Request governance approval</td></tr>
+        <tr><td>POST</td><td>/api/governance/:id/approve</td><td>Approve governance request</td></tr>
+    </table>
+</div>
+
+<!-- 7. PROJECT STATISTICS -->
+<div class="page section">
+    <h2>7. Project Statistics</h2>
+    
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="number">8</div>
+            <div class="label">Pages</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">40+</div>
+            <div class="label">Components</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">18</div>
+            <div class="label">DB Models</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">6</div>
+            <div class="label">Backend Services</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">30+</div>
+            <div class="label">API Endpoints</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">15</div>
+            <div class="label">Core Features</div>
+        </div>
+    </div>
+
+    <h3>Frontend Pages</h3>
+    <table>
+        <tr><th>Page</th><th>Route</th><th>Description</th></tr>
+        <tr><td>Dashboard</td><td>/</td><td>Main analytics dashboard with health scores and review alerts</td></tr>
+        <tr><td>Visual Tree</td><td>/tree</td><td>Interactive decision tree canvas with D3 visualization</td></tr>
+        <tr><td>Decisions</td><td>/decisions</td><td>Searchable decision library with filtering</td></tr>
+        <tr><td>New Decision</td><td>/decisions/new</td><td>Multi-step creation wizard</td></tr>
+        <tr><td>Decision Detail</td><td>/decisions/:id</td><td>Comprehensive 8-tab decision detail view</td></tr>
+        <tr><td>Decision Focus</td><td>/decisions/:id/focus</td><td>Full-screen focus view for deep analysis</td></tr>
+        <tr><td>Decision Tree</td><td>/decisions/:id/tree</td><td>Decision-scoped tree visualization</td></tr>
+        <tr><td>Team Dashboard</td><td>/team/dashboard</td><td>Team workspace with Kanban board and member management</td></tr>
+    </table>
+
+    <h3>Navigation Structure</h3>
+    <table>
+        <tr><th>Sidebar Item</th><th>Icon</th><th>Destination</th></tr>
+        <tr><td>Dashboard</td><td>🏠</td><td>Main analytics overview</td></tr>
+        <tr><td>Visual Tree</td><td>🌳</td><td>Interactive decision tree canvas</td></tr>
+        <tr><td>Decisions</td><td>📋</td><td>Decision library</td></tr>
+        <tr><td>New Decision</td><td>➕</td><td>Creation wizard</td></tr>
+        <tr><td>Team Space</td><td>👥</td><td>Team dashboard with Kanban</td></tr>
+    </table>
+
+    <div style="margin-top: 40px; padding: 24px; background: #f1f5f9; border-radius: 12px; text-align: center;">
+        <p style="font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 4px;">Decivue — Decision Intelligence Platform</p>
+        <p style="font-size: 13px; color: #64748b; margin: 0;">Version 1.0 • February 2026 • Built with React, Node.js, and PostgreSQL</p>
+    </div>
+</div>
+
+</body>
+</html>

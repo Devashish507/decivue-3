@@ -16,13 +16,13 @@ const ReviewAlertCard = ({ alert }) => {
 
     // Color mapping for escalation levels
     const escalationColors = {
-        GOVERNANCE_RISK: 'bg-red-100 text-red-800 border-red-300',
-        HIGH_PRIORITY: 'bg-orange-100 text-orange-800 border-orange-300',
-        REMINDER: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-        null: 'bg-blue-100 text-blue-800 border-blue-300'
+        GOVERNANCE_RISK: 'bg-red-50 text-red-800 border-red-200',
+        HIGH_PRIORITY: 'bg-orange-50 text-orange-800 border-orange-200',
+        REMINDER: 'bg-amber-50 text-amber-800 border-amber-200',
+        null: 'bg-blue-50 text-blue-800 border-blue-200'
     };
 
-    const urgencyColor = urgencyScore >= 80 ? 'text-red-600' : urgencyScore >= 60 ? 'text-orange-600' : 'text-yellow-600';
+    const urgencyColor = urgencyScore >= 80 ? 'text-red-600' : urgencyScore >= 60 ? 'text-orange-600' : 'text-amber-600';
     const bgColor = escalationLevel ? escalationColors[escalationLevel] : escalationColors[null];
 
     // Format date
@@ -32,11 +32,11 @@ const ReviewAlertCard = ({ alert }) => {
     };
 
     return (
-        <div className={`border-2 ${bgColor} rounded-xl p-4 transition-all hover:shadow-md`}>
+        <div className={`border ${bgColor} rounded-2xl p-4 transition-all duration-200 hover:shadow-md`}>
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
-                    <Link to={`/decisions/${id}`} className="text-lg font-semibold text-gray-900 hover:text-blue-600 flex items-center gap-2">
+                    <Link to={`/decisions/${id}`} className="text-base font-semibold text-gray-900 hover:text-blue-600 transition-colors flex items-center gap-2">
                         {title}
                         <ArrowRight className="w-4 h-4" />
                     </Link>
@@ -52,7 +52,7 @@ const ReviewAlertCard = ({ alert }) => {
 
                 {/* Urgency Score Badge */}
                 <div className="ml-3">
-                    <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full bg-white border-2 ${urgencyColor} font-bold text-sm`}>
+                    <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full bg-white border ${urgencyColor} font-bold text-sm`}>
                         <TrendingUp className="w-4 h-4" />
                         {urgencyScore}
                     </div>
@@ -74,7 +74,7 @@ const ReviewAlertCard = ({ alert }) => {
 
             {/* What Changed */}
             {whatChanged && whatChanged.length > 0 && !whatChanged.includes('No previous review available') && (
-                <div className="mt-3 pt-3 border-t border-gray-300">
+                <div className="mt-3 pt-3 border-t border-gray-200/50">
                     <p className="text-xs font-semibold text-gray-600 mb-1.5">What Changed:</p>
                     <ul className="text-xs text-gray-700 space-y-1">
                         {whatChanged.slice(0, 3).map((change, idx) => (
@@ -91,7 +91,7 @@ const ReviewAlertCard = ({ alert }) => {
             <div className="mt-4">
                 <Link
                     to={`/decisions/${id}`}
-                    className="block w-full text-center px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="block w-full text-center px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-xl transition-all hover:shadow-md active:scale-[0.98]"
                 >
                     Review Now
                 </Link>

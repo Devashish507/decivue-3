@@ -1,11 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import logo from '../assets/logo.png'
 
 const navItems = [
     { path: '/', label: 'Dashboard', icon: HomeIcon },
     { path: '/tree', label: 'Visual Tree', icon: TreeIcon },
     { path: '/decisions', label: 'Decisions', icon: ListIcon },
-    { path: '/decisions/new', label: 'New Decision', icon: PlusIcon },
     { path: '/team/dashboard', label: 'Team Space', icon: TeamIcon },
 ]
 
@@ -13,42 +13,62 @@ export default function Sidebar() {
     const location = useLocation()
 
     return (
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-50 hidden md:flex flex-col">
+        <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 z-50 hidden md:flex flex-col">
             {/* Logo Area */}
             <div className="h-16 flex items-center px-6 border-b border-gray-100">
-                <Link to="/" className="flex items-center gap-3">
-                    <img src={logo} alt="Decivue Logo" className="h-8 w-auto" />
+                <Link to="/" className="flex items-center gap-3 group">
+                    <img src={logo} alt="Decivue Logo" className="h-8 w-auto transition-transform duration-200 group-hover:scale-105" />
                     <span className="text-xl font-bold text-gray-900 tracking-tight">Decivue</span>
                 </Link>
             </div>
 
             {/* Navigation Links */}
-            <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+            <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-thin">
                 {navItems.map(item => {
-                    const isActive = location.pathname === item.path
+                    const isActive = item.path === '/'
+                        ? location.pathname === '/'
+                        : location.pathname.startsWith(item.path)
                     return (
                         <Link
                             key={item.path}
                             to={item.path}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
-                                ? 'bg-blue-50 text-blue-700 shadow-sm'
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                            className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
+                                ? 'text-blue-700'
+                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                                 }`}
                         >
+                            {/* Active background indicator */}
+                            {isActive && (
+                                <motion.div
+                                    layoutId="sidebar-active"
+                                    className="absolute inset-0 bg-blue-50 rounded-xl border border-blue-100"
+                                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                                />
+                            )}
+
                             <item.icon
-                                className={`w-5 h-5 transition-colors ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                                className={`relative z-10 w-5 h-5 transition-colors duration-200 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
                                     }`}
                             />
-                            <span>{item.label}</span>
+                            <span className="relative z-10">{item.label}</span>
+
+                            {/* Active right edge indicator */}
+                            {isActive && (
+                                <motion.div
+                                    layoutId="sidebar-edge"
+                                    className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-blue-600 rounded-l-full"
+                                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                                />
+                            )}
                         </Link>
                     )
                 })}
             </nav>
 
-            {/* Bottom User Area (Placeholder for future) */}
+            {/* Bottom User Area */}
             <div className="p-4 border-t border-gray-100">
-                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 cursor-pointer transition-all duration-200">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
                         JD
                     </div>
                     <div className="flex-1 min-w-0">
@@ -61,7 +81,7 @@ export default function Sidebar() {
     )
 }
 
-// Icons (Moved from Layout.jsx)
+// Icons
 function HomeIcon({ className }) {
     return (
         <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { teamService } from '../services/api';
 import { useLayout } from '../contexts/LayoutContext';
-import { Users, AlertTriangle, Activity, Shield, Plus } from 'lucide-react';
+import { Users, AlertTriangle, Activity, Shield } from 'lucide-react';
+import StatCard from '../components/StatCard';
 import DecisionCard from '../components/DecisionCard';
 import ManageMembersModal from '../components/ManageMembersModal';
 import DecisionKanban from '../components/kanban/DecisionKanban';
 
 export default function TeamDashboard() {
-    const { id } = useParams(); // Team ID
+    const { id } = useParams();
     const [teamData, setTeamData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showAddMember, setShowAddMember] = useState(false);
@@ -50,8 +51,12 @@ export default function TeamDashboard() {
         }
     };
 
-    if (loading) return <div className="flex h-screen items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
-    if (!teamData) return <div className="p-8">Team not found</div>;
+    if (loading) return (
+        <div className="flex h-screen items-center justify-center">
+            <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+    );
+    if (!teamData) return <div className="p-8 text-gray-500 text-center">Team not found</div>;
 
     const { team, members, decisions, stats } = teamData;
 
@@ -60,11 +65,11 @@ export default function TeamDashboard() {
             <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
                 {/* Header - Only shown in Kanban mode */}
                 {view === 'kanban' && (
-                    <div className="flex-none bg-white border-b border-gray-200 px-6 py-2 flex items-center justify-between shadow-sm z-10">
+                    <div className="flex-none bg-white border-b border-gray-100 px-6 py-2 flex items-center justify-between shadow-sm z-10">
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setView('list')}
-                                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors"
+                                className="p-2 rounded-xl hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors"
                                 title="Back to Workspace"
                             >
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -73,7 +78,7 @@ export default function TeamDashboard() {
                             </button>
                             <h1 className="text-lg font-bold text-gray-900 tracking-tight">{team.name}</h1>
                         </div>
-                        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors" onClick={() => setShowAddMember(true)} title="Manage Members">
+                        <button className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors" onClick={() => setShowAddMember(true)} title="Manage Members">
                             <Users className="w-5 h-5" />
                         </button>
                     </div>
@@ -86,32 +91,32 @@ export default function TeamDashboard() {
                             <DecisionKanban decisions={decisions} onUpdate={fetchTeamData} />
                         </div>
                     ) : (
-                        <div className="px-6 pt-6 pb-6 space-y-6 w-full">
+                        <div className="px-6 pt-6 pb-6 space-y-6 w-full animate-fade-in">
                             {/* Summary Cards */}
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <StatCard
                                     label="Active Decisions"
                                     value={stats.active}
-                                    icon={<Activity className="w-5 h-5 text-blue-600" />}
-                                    color="bg-blue-50 border-blue-100"
+                                    color="blue"
+                                    icon={<Activity className="w-6 h-6" />}
                                 />
                                 <StatCard
                                     label="Under Review"
                                     value={stats.underReview}
-                                    icon={<Users className="w-5 h-5 text-amber-600" />}
-                                    color="bg-amber-50 border-amber-100"
+                                    color="amber"
+                                    icon={<Users className="w-6 h-6" />}
                                 />
                                 <StatCard
                                     label="High Impact"
                                     value={stats.highImpact}
-                                    icon={<AlertTriangle className="w-5 h-5 text-purple-600" />}
-                                    color="bg-purple-50 border-purple-100"
+                                    color="purple"
+                                    icon={<AlertTriangle className="w-6 h-6" />}
                                 />
                                 <StatCard
                                     label="Governance Locked"
                                     value={stats.governanceLocked}
-                                    icon={<Shield className="w-5 h-5 text-red-600" />}
-                                    color="bg-red-50 border-red-100"
+                                    color="red"
+                                    icon={<Shield className="w-6 h-6" />}
                                 />
                             </div>
 
@@ -122,7 +127,7 @@ export default function TeamDashboard() {
                                         <h2 className="text-lg font-bold text-gray-900">Team Decisions</h2>
                                         <button
                                             onClick={() => setView('kanban')}
-                                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 text-sm font-medium transition-colors"
+                                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 text-sm font-medium transition-all active:scale-[0.98]"
                                         >
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
@@ -131,9 +136,9 @@ export default function TeamDashboard() {
                                         </button>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                         {decisions.length === 0 ? (
-                                            <div className="col-span-full text-center py-12 bg-white rounded-xl border border-gray-200 border-dashed">
+                                            <div className="col-span-full text-center py-16 bg-white rounded-2xl border border-gray-100 border-dashed">
                                                 <p className="text-gray-500">No decisions yet.</p>
                                             </div>
                                         ) : (
@@ -157,19 +162,5 @@ export default function TeamDashboard() {
                 />
             )}
         </>
-    );
-}
-
-function StatCard({ label, value, icon, color }) {
-    return (
-        <div className={`bg-white rounded-2xl border p-5 flex items-center justify-between shadow-sm transition-shadow hover:shadow-md ${color.replace('bg-', 'border-')}`}>
-            <div>
-                <p className="text-sm font-medium text-gray-500">{label}</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
-            </div>
-            <div className={`p-3 rounded-xl ${color.split(' ')[0]} ${color.split(' ')[0].replace('bg-', 'text-').replace('50', '600')}`}>
-                {icon}
-            </div>
-        </div>
     );
 }

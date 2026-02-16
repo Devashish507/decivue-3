@@ -10,19 +10,15 @@ import EditDecisionModal from '../components/EditDecisionModal';
 export default function DecisionLibraryPage() {
     const { decisions, loading, error, refresh, updateDecision } = useDecisions();
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState('lastReviewed'); // lastReviewed, confidence, risk, title
-    const [filterHealth, setFilterHealth] = useState('all'); // all, healthy, needs-review, at-risk
+    const [sortBy, setSortBy] = useState('lastReviewed');
+    const [filterHealth, setFilterHealth] = useState('all');
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [editingDecision, setEditingDecision] = useState(null);
 
-
-
     // Filter and sort decisions
     const filteredDecisions = useMemo(() => {
-        // Show only root decisions in the library by default
         let filtered = decisions.filter(d => d.parentId === null || !d.parentId);
 
-        // Search filter
         if (searchQuery) {
             filtered = filtered.filter(d =>
                 d.statement?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -31,12 +27,10 @@ export default function DecisionLibraryPage() {
             );
         }
 
-        // Health filter
         if (filterHealth !== 'all') {
             filtered = filtered.filter(d => d.healthStatus === filterHealth);
         }
 
-        // Sort
         filtered = [...filtered].sort((a, b) => {
             switch (sortBy) {
                 case 'confidence':
@@ -57,7 +51,7 @@ export default function DecisionLibraryPage() {
 
     if (loading) {
         return (
-            <div className="p-6">
+            <div className="p-6 animate-fade-in">
                 <LoadingSkeleton />
             </div>
         );
@@ -66,30 +60,28 @@ export default function DecisionLibraryPage() {
     if (error) {
         return (
             <div className="p-6">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700">
                     Error loading decisions: {error}
                 </div>
             </div>
         );
     }
 
-
-
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 animate-fade-in">
             {/* Header */}
-            <div className="bg-white border-b border-gray-200">
+            <div className="bg-white border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-6 py-6">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Decision Library</h1>
+                            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Decision Library</h1>
                             <p className="text-sm text-gray-500 mt-1">
                                 {filteredDecisions.length} {filteredDecisions.length === 1 ? 'decision' : 'decisions'}
                             </p>
                         </div>
                         <button
                             onClick={() => setIsWizardOpen(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm active:scale-95"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -110,7 +102,7 @@ export default function DecisionLibraryPage() {
                                 placeholder="Search decisions..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm bg-white"
                             />
                         </div>
 
@@ -118,7 +110,7 @@ export default function DecisionLibraryPage() {
                         <select
                             value={filterHealth}
                             onChange={(e) => setFilterHealth(e.target.value)}
-                            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm bg-white cursor-pointer"
                         >
                             <option value="all">All Health States</option>
                             <option value="healthy">Healthy</option>
@@ -130,7 +122,7 @@ export default function DecisionLibraryPage() {
                         <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
-                            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm bg-white cursor-pointer"
                         >
                             <option value="lastReviewed">Last Reviewed</option>
                             <option value="confidence">Confidence</option>
@@ -156,11 +148,11 @@ export default function DecisionLibraryPage() {
             {/* Decision Grid */}
             <div className="max-w-7xl mx-auto px-6 py-8">
                 {filteredDecisions.length === 0 ? (
-                    <div className="text-center py-12">
+                    <div className="text-center py-16">
                         <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">No decisions found</h3>
+                        <h3 className="text-base font-semibold text-gray-900 mb-1">No decisions found</h3>
                         <p className="text-sm text-gray-500">
                             {searchQuery || filterHealth !== 'all' ? 'Try adjusting your filters' : 'Get started by creating your first decision'}
                         </p>
@@ -175,9 +167,9 @@ export default function DecisionLibraryPage() {
                         {filteredDecisions.map((decision, index) => (
                             <motion.div
                                 key={decision.id}
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05, duration: 0.3 }}
+                                transition={{ delay: index * 0.04, duration: 0.3 }}
                             >
                                 <DecisionCard
                                     decision={decision}

@@ -303,416 +303,387 @@ export default function DecisionDetail() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`
-              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-              ${activeTab === 'overview'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-            `}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('tree')}
-            className={`
-              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-              ${activeTab === 'tree'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-            `}
-          >
-            Decision Tree
-          </button>
-          <button
-            onClick={() => setActiveTab('assistant')}
-            className={`
-              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-              ${activeTab === 'assistant'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-            `}
-          >
-            Assistant
-          </button>
-          <button
-            onClick={() => setActiveTab('attachments')}
-            className={`
-              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-              ${activeTab === 'attachments'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-            `}
-          >
-            Attachments
-          </button>
-          <button
-            onClick={() => setActiveTab('versions')}
-            className={`
-              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-              ${activeTab === 'versions'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-            `}
-          >
-            Versions
-          </button>
-          <button
-            onClick={() => setActiveTab('governance')}
-            className={`
-              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-              ${activeTab === 'governance'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-            `}
-          >
-            Governance
-          </button>
+        <nav className="-mb-px flex space-x-6 overflow-x-auto scrollbar-thin" aria-label="Tabs">
+          {[
+            { id: 'overview', label: 'Overview' },
+            { id: 'tree', label: 'Decision Tree' },
+            { id: 'assistant', label: 'Assistant' },
+            { id: 'attachments', label: 'Attachments' },
+            { id: 'versions', label: 'Versions' },
+            { id: 'governance', label: 'Governance' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`relative whitespace-nowrap py-4 px-1 font-medium text-sm transition-colors duration-200 ${activeTab === tab.id
+                ? 'text-blue-600'
+                : 'text-gray-500 hover:text-gray-900'
+                }`}
+            >
+              {tab.label}
+              {activeTab === tab.id && (
+                <motion.div
+                  layoutId="detail-tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+            </button>
+          ))}
         </nav>
       </div>
 
-      {activeTab === 'overview' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Health Panel */}
-            <DecisionHealthPanel decision={decision} />
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+        >
 
-            {/* Summary */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">Decision Summary</h2>
-              <p className="text-sm text-gray-600 leading-relaxed">{decision.context}</p>
-              <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
-                <RiskTag level={decision.riskLevel} />
-                <Tooltip content="How much this decision affects the organization">
-                  <span className="text-xs font-medium px-2.5 py-1 rounded-md border border-gray-200 bg-gray-50 text-gray-600 cursor-help">
-                    {decision.impactLevel.charAt(0).toUpperCase() + decision.impactLevel.slice(1)} Impact
-                  </span>
-                </Tooltip>
-                <span className="text-xs text-gray-400">
-                  Created {formatDate(decision.createdAt)} · Reviewed {formatDate(decision.lastReviewedAt)}
-                </span>
-              </div>
-            </div>
+          {activeTab === 'overview' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Content */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Health Panel */}
+                <DecisionHealthPanel decision={decision} />
 
-            {/* Assumptions */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold text-gray-700">Assumptions</h2>
-                  <Tooltip content="These are the things we're betting on. If any of these change, the decision may need review.">
-                    <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </Tooltip>
-                </div>
-              </div>
-              <ul className="space-y-2">
-                {(decision.assumptions || []).map((a, i) => {
-                  const assumptionId = a.id || a._id;
-                  const assumptionText = a.text || a;
-                  const isEditing = editingAssumption?.id === assumptionId;
-
-                  return (
-                    <li key={assumptionId || i} className="group flex items-start gap-2 text-sm text-gray-600">
-                      <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-medium text-gray-500">
-                        {i + 1}
+                {/* Summary */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <h2 className="text-sm font-semibold text-gray-700 mb-3">Decision Summary</h2>
+                  <p className="text-sm text-gray-600 leading-relaxed">{decision.context}</p>
+                  <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+                    <RiskTag level={decision.riskLevel} />
+                    <Tooltip content="How much this decision affects the organization">
+                      <span className="text-xs font-medium px-2.5 py-1 rounded-md border border-gray-200 bg-gray-50 text-gray-600 cursor-help">
+                        {decision.impactLevel.charAt(0).toUpperCase() + decision.impactLevel.slice(1)} Impact
                       </span>
-                      {isEditing ? (
-                        <div className="flex-1 flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editingAssumption.text}
-                            onChange={e => setEditingAssumption({ ...editingAssumption, text: e.target.value })}
-                            className="flex-1 px-2 py-1 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            autoFocus
-                          />
-                          <button
-                            onClick={() => handleEditAssumption(assumptionId, editingAssumption.text)}
-                            disabled={!editingAssumption.text.trim()}
-                            className="px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
-                          >Save</button>
-                          <button
-                            onClick={() => setEditingAssumption(null)}
-                            className="px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700"
-                          >Cancel</button>
-                        </div>
-                      ) : (
-                        <>
-                          <span className="flex-1">{assumptionText}</span>
-                          {assumptionId && (
-                            <div className="hidden group-hover:flex items-center gap-1 flex-shrink-0">
-                              <button
-                                onClick={() => setEditingAssumption({ id: assumptionId, text: assumptionText })}
-                                className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                                title="Edit assumption"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => handleDeleteAssumption(assumptionId)}
-                                className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                                title="Delete assumption"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+                    </Tooltip>
+                    <span className="text-xs text-gray-400">
+                      Created {formatDate(decision.createdAt)} · Reviewed {formatDate(decision.lastReviewedAt)}
+                    </span>
+                  </div>
+                </div>
 
-            {/* Health Signals */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-sm font-semibold text-gray-700">Health Signals</h2>
-                <Tooltip content="These signals tell you what's going well and what might need attention.">
-                  <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </Tooltip>
-              </div>
-              <div className="space-y-2">
-                {(decision.signals || []).map((signal, i) => (
-                  <SignalRow key={i} signal={signal} />
-                ))}
-              </div>
-            </div>
-
-            {/* Conflict Detection */}
-            {decision.conflict && (
-              <ConflictCompareCard decision={decision} conflict={decision.conflict} />
-            )}
-
-            {/* Sub-Decisions */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-gray-700">Sub-Decisions</h2>
-                <button
-                  onClick={() => setSubDecisionModal(true)}
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Sub-Decision
-                </button>
-              </div>
-
-              {decision.children && decision.children.length > 0 ? (
-                <div className="space-y-3">
-                  {decision.children.map(child => (
-                    <div
-                      key={child.id}
-                      onClick={() => navigate(`/decisions/${child.id}/focus`)}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50 cursor-pointer transition-all group"
-                    >
-                      <div className="flex-1 min-w-0 mr-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-700">
-                            {child.title}
-                          </h3>
-                          <RiskTag level={child.riskLevel} size="xs" />
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-1.5">
-                          {/* Fallback to 0 if not present */}
-                          <div
-                            className="bg-blue-500 h-1.5 rounded-full"
-                            style={{ width: `${child.progressPercentage || 0}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {child.lifecycleState !== 'Completed' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMarkSubDecisionDone(child.id);
-                            }}
-                            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Mark as Done"
-                          >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </button>
-                        )}
-                        <div className="text-right">
-                          <span className="block text-xs font-bold text-gray-700">
-                            {Math.round(child.confidence || 0)}%
-                          </span>
-                          <span className="text-[10px] text-gray-500 uppercase tracking-wide">Confidence</span>
-                        </div>
-                        <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                {/* Assumptions */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-semibold text-gray-700">Assumptions</h2>
+                      <Tooltip content="These are the things we're betting on. If any of these change, the decision may need review.">
+                        <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                      </div>
+                      </Tooltip>
                     </div>
-                  ))}
+                  </div>
+                  <ul className="space-y-2">
+                    {(decision.assumptions || []).map((a, i) => {
+                      const assumptionId = a.id || a._id;
+                      const assumptionText = a.text || a;
+                      const isEditing = editingAssumption?.id === assumptionId;
+
+                      return (
+                        <li key={assumptionId || i} className="group flex items-start gap-2 text-sm text-gray-600">
+                          <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-medium text-gray-500">
+                            {i + 1}
+                          </span>
+                          {isEditing ? (
+                            <div className="flex-1 flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={editingAssumption.text}
+                                onChange={e => setEditingAssumption({ ...editingAssumption, text: e.target.value })}
+                                className="flex-1 px-2 py-1 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => handleEditAssumption(assumptionId, editingAssumption.text)}
+                                disabled={!editingAssumption.text.trim()}
+                                className="px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
+                              >Save</button>
+                              <button
+                                onClick={() => setEditingAssumption(null)}
+                                className="px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700"
+                              >Cancel</button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="flex-1">{assumptionText}</span>
+                              {assumptionId && (
+                                <div className="hidden group-hover:flex items-center gap-1 flex-shrink-0">
+                                  <button
+                                    onClick={() => setEditingAssumption({ id: assumptionId, text: assumptionText })}
+                                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                                    title="Edit assumption"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteAssumption(assumptionId)}
+                                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                                    title="Delete assumption"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
+
+                {/* Health Signals */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <h2 className="text-sm font-semibold text-gray-700">Health Signals</h2>
+                    <Tooltip content="These signals tell you what's going well and what might need attention.">
+                      <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </Tooltip>
+                  </div>
+                  <div className="space-y-2">
+                    {(decision.signals || []).map((signal, i) => (
+                      <SignalRow key={i} signal={signal} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Conflict Detection */}
+                {decision.conflict && (
+                  <ConflictCompareCard decision={decision} conflict={decision.conflict} />
+                )}
+
+                {/* Sub-Decisions */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-sm font-semibold text-gray-700">Sub-Decisions</h2>
+                    <button
+                      onClick={() => setSubDecisionModal(true)}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add Sub-Decision
+                    </button>
+                  </div>
+
+                  {decision.children && decision.children.length > 0 ? (
+                    <div className="space-y-3">
+                      {decision.children.map(child => (
+                        <div
+                          key={child.id}
+                          onClick={() => navigate(`/decisions/${child.id}/focus`)}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50 cursor-pointer transition-all group"
+                        >
+                          <div className="flex-1 min-w-0 mr-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-700">
+                                {child.title}
+                              </h3>
+                              <RiskTag level={child.riskLevel} size="xs" />
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              {/* Fallback to 0 if not present */}
+                              <div
+                                className="bg-blue-500 h-1.5 rounded-full"
+                                style={{ width: `${child.progressPercentage || 0}%` }}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {child.lifecycleState !== 'Completed' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkSubDecisionDone(child.id);
+                                }}
+                                className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                title="Mark as Done"
+                              >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </button>
+                            )}
+                            <div className="text-right">
+                              <span className="block text-xs font-bold text-gray-700">
+                                {Math.round(child.confidence || 0)}%
+                              </span>
+                              <span className="text-[10px] text-gray-500 uppercase tracking-wide">Confidence</span>
+                            </div>
+                            <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                      <p className="text-sm text-gray-500 mb-2">No sub-decisions yet</p>
+                      <button
+                        onClick={() => setSubDecisionModal(true)}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Break down this decision
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Timeline */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <h2 className="text-sm font-semibold text-gray-700 mb-4">Decision Timeline</h2>
+                  <Timeline events={[...(decision.timeline || [])].reverse()} />
+                </div>
+
+                {/* Notes */}
+                {(decision.notes || []).length > 0 && (
+                  <div className="bg-white rounded-xl border border-gray-200 p-6">
+                    <h2 className="text-sm font-semibold text-gray-700 mb-3">Notes</h2>
+                    <ul className="space-y-2">
+                      {decision.notes.map((note, i) => (
+                        <li key={i} className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+                          {note}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                <GovernanceActionPanel decision={decision} onUpdate={refreshDecision} />
+
+                {/* Actions */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <h2 className="text-sm font-semibold text-gray-700 mb-3">Actions</h2>
+                  <div className="space-y-2">
+                    {(decision.isGovernanceRequired && (decision.governanceStatus === 'Draft' || decision.governanceStatus === 'Rejected')) && (
+                      <button
+                        onClick={handleRequestApproval}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Request Approval
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setConfirmAction('reaffirm')}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Reaffirm Decision
+                    </button>
+                    <GovernanceGuard decision={decision} onAction={() => setNoteModal(true)}>
+                      <button
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Add Review Note
+                      </button>
+                    </GovernanceGuard>
+                    <GovernanceGuard decision={decision} onAction={() => setAssumptionModal(true)}>
+                      <button
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Update Assumptions
+                      </button>
+                    </GovernanceGuard>
+                    <button
+                      onClick={() => setReviewDateModal(true)}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Mark Reviewed
+                    </button>
+                  </div>
+                </div>
+
+                {/* Insights Panel */}
+                <InsightBox insights={decision.insights} />
+
+                {/* Quick Info */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <h2 className="text-sm font-semibold text-gray-700 mb-3">Quick Info</h2>
+                  <dl className="space-y-3">
+                    <div>
+                      <dt className="text-xs text-gray-400">Created</dt>
+                      <dd className="text-sm text-gray-700">{formatDate(decision.createdAt)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-gray-400">Last Reviewed</dt>
+                      <dd className="text-sm text-gray-700">{formatDate(decision.lastReviewedAt)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-gray-400">Next Review</dt>
+                      <dd className="text-sm text-gray-700">{formatDate(decision.reviewDate)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-gray-400">Confidence</dt>
+                      <dd className="text-sm font-semibold text-gray-700">{decision.confidence}%</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === 'tree' ? (
+            <DecisionTreeContainer decisionId={decision.id} />
+          ) : activeTab === 'assistant' ? (
+            <DecisionChatbot isInline={true} />
+          ) : activeTab === 'versions' ? (
+            <div className="bg-white rounded-xl border border-gray-200 min-h-[400px]">
+              {comparingVersion ? (
+                <VersionComparison
+                  decisionId={id}
+                  versionId={comparingVersion.id}
+                  currentDecision={decision}
+                  onClose={() => setComparingVersion(null)}
+                />
               ) : (
-                <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                  <p className="text-sm text-gray-500 mb-2">No sub-decisions yet</p>
-                  <button
-                    onClick={() => setSubDecisionModal(true)}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Break down this decision
-                  </button>
-                </div>
+                <VersionHistory
+                  decisionId={id}
+                  onCompare={(version) => setComparingVersion(version)}
+                />
               )}
             </div>
-
-            {/* Timeline */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-sm font-semibold text-gray-700 mb-4">Decision Timeline</h2>
-              <Timeline events={[...(decision.timeline || [])].reverse()} />
-            </div>
-
-            {/* Notes */}
-            {(decision.notes || []).length > 0 && (
+          ) : activeTab === 'governance' ? (
+            <div className="space-y-6">
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">Notes</h2>
-                <ul className="space-y-2">
-                  {decision.notes.map((note, i) => (
-                    <li key={i} className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
-                      {note}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <GovernanceActionPanel decision={decision} onUpdate={refreshDecision} />
-
-            {/* Actions */}
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">Actions</h2>
-              <div className="space-y-2">
-                {(decision.isGovernanceRequired && (decision.governanceStatus === 'Draft' || decision.governanceStatus === 'Rejected')) && (
-                  <button
-                    onClick={handleRequestApproval}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Request Approval
-                  </button>
-                )}
-                <button
-                  onClick={() => setConfirmAction('reaffirm')}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Reaffirm Decision
-                </button>
-                <GovernanceGuard decision={decision} onAction={() => setNoteModal(true)}>
-                  <button
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Add Review Note
-                  </button>
-                </GovernanceGuard>
-                <GovernanceGuard decision={decision} onAction={() => setAssumptionModal(true)}>
-                  <button
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Update Assumptions
-                  </button>
-                </GovernanceGuard>
-                <button
-                  onClick={() => setReviewDateModal(true)}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Mark Reviewed
-                </button>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Governance Audit Log</h2>
+                <AuditLogList logs={decision.auditLogs} />
               </div>
             </div>
-
-            {/* Insights Panel */}
-            <InsightBox insights={decision.insights} />
-
-            {/* Quick Info */}
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">Quick Info</h2>
-              <dl className="space-y-3">
-                <div>
-                  <dt className="text-xs text-gray-400">Created</dt>
-                  <dd className="text-sm text-gray-700">{formatDate(decision.createdAt)}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-gray-400">Last Reviewed</dt>
-                  <dd className="text-sm text-gray-700">{formatDate(decision.lastReviewedAt)}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-gray-400">Next Review</dt>
-                  <dd className="text-sm text-gray-700">{formatDate(decision.reviewDate)}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-gray-400">Confidence</dt>
-                  <dd className="text-sm font-semibold text-gray-700">{decision.confidence}%</dd>
-                </div>
-              </dl>
-            </div>
-          </div>
-        </div>
-      ) : activeTab === 'tree' ? (
-        <DecisionTreeContainer decisionId={decision.id} />
-      ) : activeTab === 'assistant' ? (
-        <DecisionChatbot isInline={true} />
-      ) : activeTab === 'versions' ? (
-        <div className="bg-white rounded-xl border border-gray-200 min-h-[400px]">
-          {comparingVersion ? (
-            <VersionComparison
-              decisionId={id}
-              versionId={comparingVersion.id}
-              currentDecision={decision}
-              onClose={() => setComparingVersion(null)}
-            />
           ) : (
-            <VersionHistory
-              decisionId={id}
-              onCompare={(version) => setComparingVersion(version)}
-            />
+            <div className="bg-white rounded-xl border border-gray-200 p-8 min-h-[400px]">
+              <AttachmentsSection decisionId={decision.id} />
+            </div>
           )}
-        </div>
-      ) : activeTab === 'governance' ? (
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Governance Audit Log</h2>
-            <AuditLogList logs={decision.auditLogs} />
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 min-h-[400px]">
-          <AttachmentsSection decisionId={decision.id} />
-        </div>
-      )}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Note Modal */}
       <Modal isOpen={noteModal} onClose={() => { setNoteModal(false); setNoteText(''); setSelectedTag(null); }} title="Add a Review Note">

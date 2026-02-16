@@ -67,14 +67,14 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">
             Overview of your decision portfolio health and status.
           </p>
         </div>
         <Link
           to="/decisions/new"
-          className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
+          className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -83,7 +83,7 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* Stat Cards - Modern Grid */}
+      {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Decisions"
@@ -129,7 +129,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Health Score Widget */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-8 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 p-8 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
           <div className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
             <Tooltip content="Weighted average of confidence, risk, and progress across all decisions">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -138,11 +138,10 @@ export default function Dashboard() {
             </Tooltip>
           </div>
 
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Portfolio Health</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-6">Portfolio Health</h2>
 
           <div className="relative mb-4">
-            {/* Glow effect behind gauge */}
-            <div className={`absolute inset-0 blur-2xl opacity-20 ${status.bg.replace('bg-', 'bg-')}`}></div>
+            <div className={`absolute inset-0 blur-2xl opacity-20 ${status.bg}`}></div>
             <ConfidenceGauge value={healthScore} size={180} strokeWidth={16} />
           </div>
 
@@ -156,10 +155,10 @@ export default function Dashboard() {
         </div>
 
         {/* Review Intelligence Alerts Widget */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col h-[400px]">
           <div className="p-6 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Review Intelligence Alerts</h2>
+              <h2 className="text-base font-semibold text-gray-900">Review Intelligence Alerts</h2>
               <p className="text-xs text-gray-500 mt-0.5">
                 {reviewAlerts.GOVERNANCE_RISK.length} governance risks · {reviewAlerts.upcoming.length} upcoming reviews
               </p>
@@ -169,7 +168,7 @@ export default function Dashboard() {
               <select
                 value={filterStatus}
                 onChange={e => setFilterStatus(e.target.value)}
-                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-600 cursor-pointer hover:bg-gray-100"
+                className="px-3 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-gray-50 text-gray-600 cursor-pointer hover:bg-gray-100"
               >
                 <option value="all">All Alerts</option>
                 <option value="governance">Governance Risk</option>

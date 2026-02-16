@@ -70,8 +70,8 @@ export default function WizardStep2Analysis() {
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => handleTypeSelect(t.id)}
                                 className={`p-3 rounded-xl border-2 cursor-pointer transition-all text-center flex flex-col items-center justify-center gap-1 ${isSelected
-                                        ? `border-${t.color}-500 bg-${t.color}-50 text-${t.color}-900`
-                                        : 'border-gray-100 hover:border-gray-200 bg-white text-gray-600'
+                                    ? `border-${t.color}-500 bg-${t.color}-50 text-${t.color}-900`
+                                    : 'border-gray-100 hover:border-gray-200 bg-white text-gray-600'
                                     }`}
                             >
                                 <span className="text-2xl">{t.icon}</span>
@@ -90,15 +90,16 @@ export default function WizardStep2Analysis() {
                         <div className="flex justify-between items-center mb-1">
                             <label className="text-sm font-medium text-gray-700 uppercase tracking-wider">Confidence</label>
                             <span className={`text-lg font-bold ${basics.initialConfidence >= 70 ? 'text-green-600' :
-                                    basics.initialConfidence >= 40 ? 'text-amber-600' : 'text-red-600'
-                                }`}>{basics.initialConfidence}%</span>
+                                basics.initialConfidence >= 40 ? 'text-amber-600' : 'text-red-600'
+                                }`}>{Number(basics.initialConfidence).toFixed(2)}%</span>
                         </div>
                         <input
                             type="range"
                             min="0"
                             max="100"
+                            step="0.01"
                             value={basics.initialConfidence}
-                            onChange={(e) => handleChange('initialConfidence', parseInt(e.target.value))}
+                            onChange={(e) => handleChange('initialConfidence', parseFloat(e.target.value))}
                             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                         />
                         <div className="flex justify-between text-[10px] text-gray-400 mt-1 uppercase">
@@ -159,8 +160,8 @@ export default function WizardStep2Analysis() {
                                     type="button"
                                     onClick={() => handleChange('priorityLevel', p)}
                                     className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${basics.priorityLevel === p
-                                            ? 'bg-gray-900 border-gray-900 text-white shadow-md'
-                                            : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                                        ? 'bg-gray-900 border-gray-900 text-white shadow-md'
+                                        : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
                                         }`}
                                 >
                                     {p}

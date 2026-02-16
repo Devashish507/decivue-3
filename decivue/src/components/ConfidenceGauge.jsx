@@ -16,7 +16,7 @@ export default function ConfidenceGauge({ value, size = 120, strokeWidth = 10, l
   }
 
   // Adjust font size based on gauge size
-  const valueSize = size < 80 ? 'text-lg' : 'text-2xl'
+  const valueSize = size < 60 ? 'text-sm' : size < 80 ? 'text-lg' : 'text-2xl'
 
   return (
     <div className="relative flex flex-col items-center" style={{ width: size, height: size }}>
@@ -43,7 +43,7 @@ export default function ConfidenceGauge({ value, size = 120, strokeWidth = 10, l
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className={`${valueSize} font-bold text-gray-900`}>{value}%</span>
+        <span className={`${valueSize} font-bold text-gray-900`}>{Math.round(value)}%</span>
       </div>
     </div>
   )
@@ -65,9 +65,9 @@ export function InlineConfidenceGauge({ value }) {
   return (
     <div className="flex items-center gap-2">
       <div className={`w-20 h-2 rounded-full ${getTrack(value)}`}>
-        <div className={`h-2 rounded-full ${getColor(value)} transition-all duration-500`} style={{ width: `${value}%` }} />
+        <div className={`h-2 rounded-full ${getColor(value)} transition-all duration-700 ease-out`} style={{ width: `${value}%` }} />
       </div>
-      <span className="text-sm font-medium text-gray-700">{value}%</span>
+      <span className="text-sm font-medium text-gray-700">{Math.round(value)}%</span>
     </div>
   )
 }
