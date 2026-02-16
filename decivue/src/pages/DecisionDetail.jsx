@@ -15,11 +15,16 @@ import DecisionTreeContainer from '../components/DecisionTreeContainer'
 import DecisionHealthPanel from '../components/DecisionHealthPanel'
 import DecisionChatbot from '../components/DecisionChatbot'
 import { decisionService } from '../services/api'
+import { governanceService } from '../services/api'
 import { getLifecycleLabel, getLifecycleColor, formatDate } from '../utils/helpers'
 import AddDecisionWizard from '../components/AddDecisionWizard'
 import AttachmentsSection from '../components/AttachmentsSection'
 import VersionHistory from '../components/VersionHistory'
 import VersionComparison from '../components/VersionComparison'
+import GovernanceBadge from '../components/GovernanceBadge'
+import AuditLogList from '../components/AuditLogList'
+import GovernanceGuard from '../components/GovernanceGuard'
+import GovernanceActionPanel from '../components/GovernanceActionPanel'
 
 const lifecycleBadgeColors = {
   blue: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -139,8 +144,34 @@ export default function DecisionDetail() {
     }
   }
 
+  const handleRequestApproval = async () => {
+    try {
+      await governanceService.requestApproval(id, {
+        userId: 'u-current-user', // Mock ID
+        userName: 'Current User', // Mock Name
+      });
+      showToast('Approval requested successfully');
+      await refreshDecision();
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
   const handleMarkReviewed = async () => {
     try {
+      // Governance Check for High Risk (Robust)
+      const risk = (decision.riskLevel || '').toLowerCase();
+      const isHighRisk = risk === 'high' || risk === 'critical';
+      const status = (decision.governanceStatus || '').toLowerCase();
+      const isApproved = status === 'approved';
+
+      if ((decision.isGovernanceRequired || isHighRisk) && !isApproved) {
+        showToast('High Risk Decision: Initiating Approval Workflow...');
+        await handleRequestApproval();
+        setReviewDateModal(false);
+        return;
+      }
+
       // 1. Submit the review
       await decisionService.reviewDecision(id, noteText, 'Completed');
 
@@ -237,6 +268,7 @@ export default function DecisionDetail() {
           <div className="flex-1">
             <div className="flex items-center gap-3 flex-wrap mb-3">
               <HealthBadge status={decision.healthStatus} />
+              <GovernanceBadge status={decision.governanceStatus} required={decision.isGovernanceRequired} />
               <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${lifecycleBadgeColors[lifecycleColor]}`}>
                 {getLifecycleLabel(decision.lifecycleState)}
               </span>
@@ -318,6 +350,17 @@ export default function DecisionDetail() {
             `}
           >
             Versions
+          </button>
+          <button
+            onClick={() => setActiveTab('governance')}
+            className={`
+              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
+              ${activeTab === 'governance'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+            `}
+          >
+            Governance
           </button>
         </nav>
       </div>
@@ -545,10 +588,23 @@ export default function DecisionDetail() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            <GovernanceActionPanel decision={decision} onUpdate={refreshDecision} />
+
             {/* Actions */}
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <h2 className="text-sm font-semibold text-gray-700 mb-3">Actions</h2>
               <div className="space-y-2">
+                {(decision.isGovernanceRequired && (decision.governanceStatus === 'Draft' || decision.governanceStatus === 'Rejected')) && (
+                  <button
+                    onClick={handleRequestApproval}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Request Approval
+                  </button>
+                )}
                 <button
                   onClick={() => setConfirmAction('reaffirm')}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
@@ -558,24 +614,26 @@ export default function DecisionDetail() {
                   </svg>
                   Reaffirm Decision
                 </button>
-                <button
-                  onClick={() => setNoteModal(true)}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Add Review Note
-                </button>
-                <button
-                  onClick={() => setAssumptionModal(true)}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Update Assumptions
-                </button>
+                <GovernanceGuard decision={decision} onAction={() => setNoteModal(true)}>
+                  <button
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Add Review Note
+                  </button>
+                </GovernanceGuard>
+                <GovernanceGuard decision={decision} onAction={() => setAssumptionModal(true)}>
+                  <button
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Update Assumptions
+                  </button>
+                </GovernanceGuard>
                 <button
                   onClick={() => setReviewDateModal(true)}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
@@ -634,6 +692,13 @@ export default function DecisionDetail() {
               onCompare={(version) => setComparingVersion(version)}
             />
           )}
+        </div>
+      ) : activeTab === 'governance' ? (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Governance Audit Log</h2>
+            <AuditLogList logs={decision.auditLogs} />
+          </div>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 p-8 min-h-[400px]">

@@ -5,6 +5,7 @@ import DecisionLibraryPage from '../pages/DecisionLibraryPage'
 import DecisionDetail from '../pages/DecisionDetail'
 import DecisionTreePage from '../pages/DecisionTreePage'
 import DecisionFocusPage from '../pages/DecisionFocusPage'
+import TeamDashboard from '../pages/TeamDashboard'
 
 export default function AppRoutes() {
   return (
@@ -15,6 +16,8 @@ export default function AppRoutes() {
       <Route path="/decisions/:id" element={<DecisionDetail />} />
       <Route path="/decisions/:id/focus" element={<DecisionFocusPage />} />
       <Route path="/tree" element={<DecisionTreePage />} />
+      <Route path="/team/dashboard" element={<TeamDashboard />} />
+      <Route path="/team/:id/dashboard" element={<TeamDashboard />} />
     </Routes>
   )
 }

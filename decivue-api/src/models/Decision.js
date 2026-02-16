@@ -27,6 +27,9 @@ module.exports = (sequelize, DataTypes) => {
                 as: 'incomingRelations'
             });
 
+            Decision.hasMany(models.AuditLog, { foreignKey: 'decision_id', as: 'auditLogs' });
+            Decision.hasOne(models.DecisionTeamMap, { foreignKey: 'decision_id', as: 'teamMap' });
+
             // Conflict/Relations (many-to-many)
             Decision.belongsToMany(models.Decision, {
                 through: models.DecisionRelation,
@@ -40,6 +43,9 @@ module.exports = (sequelize, DataTypes) => {
 
             // Attachments
             Decision.hasMany(models.Attachment, { foreignKey: 'decision_id', as: 'attachments' });
+
+            // Governance & Team
+            Decision.belongsTo(models.Team, { foreignKey: 'team_id', as: 'team' });
         }
     }
 
@@ -116,7 +122,23 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.FLOAT,
             defaultValue: 100
         },
-        last_progress_update: DataTypes.DATE
+        last_progress_update: DataTypes.DATE,
+
+        // Governance Fields
+        is_governance_required: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        governance_status: {
+            type: DataTypes.ENUM('Draft', 'Pending Approval', 'Approved', 'Rejected'),
+            defaultValue: 'Draft'
+        },
+        owner_id: DataTypes.STRING,
+        reviewer_id: DataTypes.STRING,
+        team_id: {
+            type: DataTypes.UUID,
+            allowNull: true
+        }
     }, {
         sequelize,
         modelName: 'Decision',

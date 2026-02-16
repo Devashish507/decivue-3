@@ -7,7 +7,8 @@ const colorStyles = {
   gray: 'bg-gray-50 text-gray-700 border-gray-200',
 }
 
-export default function RiskTag({ level }) {
+export default function RiskTag({ level = 'Medium' }) {
+  if (!level) level = 'Medium'
   const color = getRiskColor(level)
   const label = level.charAt(0).toUpperCase() + level.slice(1) + ' Risk'
 

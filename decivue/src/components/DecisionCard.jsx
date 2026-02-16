@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import HealthBadge from './HealthBadge'
 import RiskTag from './RiskTag'
 import ConfidenceGauge from './ConfidenceGauge'
-import { formatDate } from '../utils/helpers'
+import GovernanceBadge from './GovernanceBadge'
 
 export default function DecisionCard({ decision, onEdit }) {
   // Calculate days since last review
@@ -24,8 +24,8 @@ export default function DecisionCard({ decision, onEdit }) {
     >
       {/* Decorative top border based on health */}
       <div className={`absolute top-0 left-0 right-0 h-1 ${decision.healthStatus === 'healthy' ? 'bg-green-500' :
-          decision.healthStatus === 'needs-review' ? 'bg-amber-500' :
-            'bg-red-500'
+        decision.healthStatus === 'needs-review' ? 'bg-amber-500' :
+          'bg-red-500'
         }`} />
 
       {/* Header: Title & Health Ring */}
@@ -33,6 +33,7 @@ export default function DecisionCard({ decision, onEdit }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <HealthBadge status={decision.healthStatus} size="sm" />
+            <GovernanceBadge status={decision.governance_status || 'Draft'} size="sm" compact={true} />
             <span className="text-xs font-medium text-gray-400 px-2 py-0.5 rounded-full bg-gray-50 border border-gray-100">
               {decision.lifecycleState || 'Active'}
             </span>

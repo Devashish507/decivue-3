@@ -5,6 +5,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const decisionRoutes = require('./src/routes/decisionRoutes');
 const attachmentRoutes = require('./src/routes/attachmentRoutes');
+const teamRoutes = require('./src/routes/teamRoutes');
+const governanceRoutes = require('./src/routes/governanceRoutes');
 const { sequelize } = require('./src/models');
 
 const app = express();
@@ -17,7 +19,9 @@ app.use(morgan('dev'));
 
 // Routes
 app.use('/api/decisions', decisionRoutes);
+app.use('/api/teams', teamRoutes);
 app.use('/api', attachmentRoutes);
+app.use('/api/governance', governanceRoutes);
 
 // Error Handling
 app.use((err, req, res, next) => {

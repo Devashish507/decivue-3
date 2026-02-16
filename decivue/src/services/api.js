@@ -123,6 +123,12 @@ const transformDecision = (d) => {
         createdAt: d.created_at || new Date().toISOString(),
         updatedAt: d.updated_at || d.created_at || new Date().toISOString(),
 
+        // Governance
+        isGovernanceRequired: d.is_governance_required,
+        governanceStatus: d.governance_status || 'Draft',
+        reviewerId: d.reviewer_id || (d.teamMap ? d.teamMap.reviewer_id : null),
+        auditLogs: d.auditLogs || [],
+
         // Relationship data for graph visualization
         outgoingRelations: d.outgoingRelations || [],
         incomingRelations: d.incomingRelations || [],
@@ -138,6 +144,7 @@ const transformDecision = (d) => {
             confidence: c.current_confidence,
             riskLevel: c.risk_level,
             progressPercentage: c.progress_percentage,
+            isGovernanceRequired: c.is_governance_required,
             healthStatus: (c.calculated_health?.status || c.health_score ? (c.health_score > 80 ? 'healthy' : 'at-risk') : 'healthy') // Simple fallback for lists
         })) : []
     };
@@ -366,6 +373,55 @@ export const decisionService = {
     },
     deleteAssumption: async (decisionId, assumptionId) => {
         const response = await api.delete(`/${decisionId}/assumptions/${assumptionId}`);
+        return response.data;
+    }
+};
+
+export const teamService = {
+    getAll: async () => {
+        const response = await axios.get('/api/teams');
+        return response.data;
+    },
+    create: async (data) => {
+        const response = await axios.post('/api/teams', data);
+        return response.data;
+    },
+    getDashboard: async (id) => {
+        const response = await axios.get(`/api/teams/${id}/dashboard`);
+        if (response.data.success && response.data.data.decisions) {
+            response.data.data.decisions = response.data.data.decisions.map(transformDecision);
+        }
+        return response.data;
+    },
+    addMember: async (teamId, data) => {
+        const response = await axios.post(`/api/teams/${teamId}/members`, data);
+        return response.data;
+    },
+    removeMember: async (teamId, userId) => {
+        const response = await axios.delete(`/api/teams/${teamId}/members/${userId}`);
+        return response.data;
+    },
+    updateMemberRole: async (teamId, userId, role) => {
+        const response = await axios.put(`/api/teams/${teamId}/members/${userId}`, { role });
+        return response.data;
+    }
+};
+
+export const governanceService = {
+    requestApproval: async (id, data) => {
+        const response = await axios.post(`/api/governance/decisions/${id}/request-approval`, data);
+        return response.data;
+    },
+    approve: async (id, data) => {
+        const response = await axios.post(`/api/governance/decisions/${id}/approve`, data);
+        return response.data;
+    },
+    reject: async (id, data) => {
+        const response = await axios.post(`/api/governance/decisions/${id}/reject`, data);
+        return response.data;
+    },
+    logAction: async (id, data) => {
+        const response = await axios.post(`/api/governance/decisions/${id}/log`, data);
         return response.data;
     }
 };

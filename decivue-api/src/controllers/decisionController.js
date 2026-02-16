@@ -1,4 +1,4 @@
-const { Decision, Assumption, DecisionRelation, DecisionHistory, DecisionVersion } = require('../models');
+const { Decision, Assumption, DecisionRelation, DecisionHistory, DecisionVersion, AuditLog } = require('../models');
 const treeService = require('../services/treeService');
 const healthService = require('../services/healthService');
 const { Op } = require('sequelize');
@@ -115,7 +115,8 @@ exports.getDecisionById = async (req, res) => {
                         as: 'sourceDecision',
                         attributes: ['id', 'title']
                     }]
-                }
+                },
+                { model: AuditLog, as: 'auditLogs' }
             ]
         });
 
@@ -228,6 +229,14 @@ exports.updateDecision = async (req, res) => {
         }
         // --- VERSIONING LOGIC END ---
 
+        // Governance Automation
+        let governanceRequired = req.body.is_governance_required !== undefined ? req.body.is_governance_required : decision.is_governance_required;
+        const newRisk = risk_level !== undefined ? risk_level : decision.risk_level;
+
+        if (['High', 'Critical'].includes(newRisk)) {
+            governanceRequired = true;
+        }
+
         // Update basic fields
         await decision.update({
             title: title !== undefined ? title : decision.title,
@@ -237,7 +246,12 @@ exports.updateDecision = async (req, res) => {
             impact_level: impact_level !== undefined ? impact_level : decision.impact_level,
             lifecycle_state: lifecycle_state !== undefined ? lifecycle_state : decision.lifecycle_state,
             start_date: start_date !== undefined ? start_date : decision.start_date,
-            target_date: target_date !== undefined ? target_date : decision.target_date
+            target_date: target_date !== undefined ? target_date : decision.target_date,
+            // New fields
+            is_governance_required: governanceRequired,
+            team_id: req.body.team_id !== undefined ? req.body.team_id : decision.team_id,
+            owner_id: req.body.owner_id !== undefined ? req.body.owner_id : decision.owner_id,
+            reviewer_id: req.body.reviewer_id !== undefined ? req.body.reviewer_id : decision.reviewer_id
         });
 
         // Track changes in history (Text summary for timeline)
@@ -266,6 +280,11 @@ exports.updateDecision = async (req, res) => {
 
 exports.createDecision = async (req, res) => {
     try {
+        // Governance Automation: High/Critical risk requires governance
+        if (['High', 'Critical'].includes(req.body.risk_level)) {
+            req.body.is_governance_required = true;
+        }
+
         const decision = await Decision.create(req.body);
         await DecisionHistory.create({
             decision_id: decision.id,
@@ -513,6 +532,13 @@ const deleteDecisionRecursive = async (id, t) => {
     await Assumption.destroy({ where: { decision_id: id }, transaction: t });
     await require('../models').DecisionReview.destroy({ where: { decision_id: id }, transaction: t });
     await require('../models').DecisionProgressHistory.destroy({ where: { decision_id: id }, transaction: t });
+    await require('../models').AuditLog.destroy({ where: { decision_id: id }, transaction: t });
+    await require('../models').DecisionTeamMap.destroy({ where: { decision_id: id }, transaction: t });
+
+    // Additional cleanup for models I missed earlier
+    await require('../models').Attachment.destroy({ where: { decision_id: id }, transaction: t });
+    await require('../models').DecisionOption.destroy({ where: { decision_id: id }, transaction: t });
+    await require('../models').DecisionVersion.destroy({ where: { decision_id: id }, transaction: t });
 
     // 3. Delete Decision
     await Decision.destroy({ where: { id: id }, transaction: t });
@@ -607,6 +633,8 @@ exports.getDecisionById = async (req, res) => {
             include: [
                 { model: Assumption, as: 'assumptions' },
                 { model: DecisionHistory, as: 'history' },
+                { model: require('../models').AuditLog, as: 'auditLogs' },
+                { model: require('../models').Team, as: 'team' },
                 { model: Decision, as: 'parent' },
                 { model: require('../models').SubDecisionTracking, as: 'tracking' },
                 {
