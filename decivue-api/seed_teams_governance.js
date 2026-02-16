@@ -22,14 +22,10 @@ async function seed() {
                 name: 'Product Strategy',
                 description: 'Focuses on feature roadmap, user experience, and market fit.'
             },
-            {
-                name: 'Vendor Evaluation Team',
-                description: 'Assesses third-party tools, costs, and compliance.'
-            }
         ];
 
         const createdTeams = await Team.bulkCreate(teamsData, { returning: true });
-        const [engTeam, prodTeam, vendorTeam] = createdTeams;
+        const [engTeam, prodTeam] = createdTeams;
         console.log(`Created ${createdTeams.length} teams.`);
 
         // 3. Create Users (Mock) & Assign to Teams
@@ -45,10 +41,6 @@ async function seed() {
             { team_id: prodTeam.id, user_id: 'u6', user_name: 'Frank White', role: 'Reviewer', user_avatar: 'F' },
             { team_id: prodTeam.id, user_id: 'u7', user_name: 'Grace Liu', role: 'Contributor', user_avatar: 'G' },
 
-            // Vendor Team
-            { team_id: vendorTeam.id, user_id: 'u8', user_name: 'Henry Ford', role: 'Owner', user_avatar: 'H' },
-            { team_id: vendorTeam.id, user_id: 'u9', user_name: 'Ivy Rose', role: 'Reviewer', user_avatar: 'I' },
-            { team_id: vendorTeam.id, user_id: 'u10', user_name: 'Jack Black', role: 'Contributor', user_avatar: 'J' },
         ];
 
         await TeamMember.bulkCreate(membersData);
@@ -64,18 +56,14 @@ async function seed() {
                 const decision = allDecisions[i];
                 let team, owner, reviewer;
 
-                if (i % 3 === 0) {
+                if (i % 2 === 0) {
                     team = engTeam;
                     owner = 'u1'; // Alice
                     reviewer = 'u2'; // Bob
-                } else if (i % 3 === 1) {
+                } else {
                     team = prodTeam;
                     owner = 'u5'; // Eva
                     reviewer = 'u6'; // Frank
-                } else {
-                    team = vendorTeam;
-                    owner = 'u8'; // Henry
-                    reviewer = 'u9'; // Ivy
                 }
 
                 mappings.push({

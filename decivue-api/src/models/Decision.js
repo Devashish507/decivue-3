@@ -101,7 +101,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         lifecycle_state: {
             type: DataTypes.ENUM('Draft', 'Active', 'Stale', 'Closed'),
-            defaultValue: 'Draft'
+            defaultValue: 'Active'
         },
         parent_decision_id: {
             type: DataTypes.UUID,
@@ -118,6 +118,14 @@ module.exports = (sequelize, DataTypes) => {
         },
         start_date: DataTypes.DATE,
         target_date: DataTypes.DATE,
+        color: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        kanban_status: {
+            type: DataTypes.ENUM('pool', 'todo', 'progress', 'completed'),
+            defaultValue: 'pool'
+        },
         expected_duration_days: DataTypes.INTEGER,
         health_score: {
             type: DataTypes.FLOAT,

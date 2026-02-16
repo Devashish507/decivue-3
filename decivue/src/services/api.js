@@ -101,7 +101,7 @@ const transformDecision = (d) => {
         riskLevel: (d.risk_level || 'Medium').toLowerCase(),
         impactLevel: (d.impact_level || 'Medium').toLowerCase(),
         conflict: null,
-        lifecycleState: d.lifecycle_state || 'Draft',
+        lifecycleState: d.lifecycle_state || 'Active',
         progressPercentage: d.progress_percentage || 0,
         tracking: d.tracking ? {
             status: d.tracking.status,

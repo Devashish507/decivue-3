@@ -49,10 +49,9 @@ exports.recalculateMainDecision = async (parentId) => {
         if (newConfidence > 100) newConfidence = 100;
         if (newConfidence < 0) newConfidence = 0;
 
-        // 4. Determine Lifecycle State
+        // 4. Determine Lifecycle State (Only close/stabilize, don't revert to draft)
         let newLifecycle = 'Active';
-        if (mainProgress === 0) newLifecycle = 'Draft';
-        else if (mainProgress >= 100) newLifecycle = 'Closed'; // or Stable
+        if (mainProgress >= 100) newLifecycle = 'Closed'; // or Stable
         else if (mainProgress > 80) newLifecycle = 'Stable';
 
         // 5. Update Parent Decision

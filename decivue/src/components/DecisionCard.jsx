@@ -4,6 +4,7 @@ import HealthBadge from './HealthBadge'
 import RiskTag from './RiskTag'
 import ConfidenceGauge from './ConfidenceGauge'
 import GovernanceBadge from './GovernanceBadge'
+import { getLifecycleLabel, getLifecycleColor } from '../utils/helpers'
 
 export default function DecisionCard({ decision, onEdit }) {
   // Calculate days since last review
@@ -33,9 +34,20 @@ export default function DecisionCard({ decision, onEdit }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <HealthBadge status={decision.healthStatus} size="sm" />
-            <GovernanceBadge status={decision.governance_status || 'Draft'} size="sm" compact={true} />
-            <span className="text-xs font-medium text-gray-400 px-2 py-0.5 rounded-full bg-gray-50 border border-gray-100">
-              {decision.lifecycleState || 'Active'}
+            <GovernanceBadge
+              status={decision.governance_status || 'Draft'}
+              required={decision.isGovernanceRequired}
+              size="sm"
+              compact={true}
+            />
+            {/* Lifecycle Badge */}
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${getLifecycleColor(decision.lifecycleState) === 'green' ? 'bg-green-50 text-green-700 border-green-200' :
+              getLifecycleColor(decision.lifecycleState) === 'blue' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                getLifecycleColor(decision.lifecycleState) === 'amber' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                  getLifecycleColor(decision.lifecycleState) === 'red' ? 'bg-red-50 text-red-700 border-red-200' :
+                    'bg-gray-50 text-gray-500 border-gray-200'
+              }`}>
+              {getLifecycleLabel(decision.lifecycleState)}
             </span>
           </div>
           <Link

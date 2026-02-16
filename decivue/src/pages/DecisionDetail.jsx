@@ -248,11 +248,19 @@ export default function DecisionDetail() {
   return (
     <div className="space-y-6">
       {/* Toast */}
-      {toast && (
-        <div className="fixed top-20 right-4 z-50 bg-green-600 text-white px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium">
-          {toast}
-        </div>
-      )}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed top-20 right-4 z-50 bg-green-600 text-white px-4 py-2.5 rounded-lg shadow-2xl text-sm font-medium"
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Back */}
       <Link to="/decisions" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 font-medium">
@@ -837,17 +845,17 @@ export default function DecisionDetail() {
         </div>
       </Modal>
 
-      {/* Danger Zone */}
-      <div className="bg-red-50 rounded-xl border border-red-200 p-5 mt-8">
-        <h2 className="text-sm font-semibold text-red-800 mb-2">Danger Zone</h2>
-        <p className="text-sm text-red-600 mb-4">
-          Deleting a decision is permanent and cannot be undone. All associated data (notes, history, etc.) will be removed.
-        </p>
+      {/* Delete Button */}
+      <div className="mt-8 flex justify-end">
         <button
           onClick={() => setConfirmAction('delete')}
-          className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+          className="px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1.5"
+          title="Delete this decision"
         >
-          Delete Decision
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Delete
         </button>
       </div>
 
@@ -883,10 +891,11 @@ export default function DecisionDetail() {
               else if (confirmAction === 'delete') {
                 try {
                   await decisionService.delete(id);
-                  showToast('Decision deleted');
-                  navigate('/decisions'); // Redirect to library
+                  showToast('✅ Decision deleted successfully');
+                  // Delay redirect to show toast
+                  setTimeout(() => navigate('/decisions'), 1500);
                 } catch (err) {
-                  showToast('Error: ' + err.message);
+                  showToast('❌ Error: ' + err.message);
                 }
               }
               else await handleMarkReviewed();

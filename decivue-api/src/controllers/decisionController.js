@@ -291,6 +291,10 @@ exports.createDecision = async (req, res) => {
             req.body.is_governance_required = true;
         }
 
+        if (!req.body.lifecycle_state) {
+            req.body.lifecycle_state = 'Active';
+        }
+
         const decision = await Decision.create(req.body);
         console.log('[CREATE] Decision created:', decision.id, decision.title);
 

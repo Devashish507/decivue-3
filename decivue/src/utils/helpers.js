@@ -12,20 +12,24 @@ export function getHealthLabel(status) {
 
 export function getLifecycleLabel(lifecycle) {
   switch (lifecycle) {
-    case 'fresh': return 'Fresh'
-    case 'stable': return 'Stable'
-    case 'at-risk': return 'At Risk'
-    case 'stale': return 'Stale'
-    default: return 'Unknown'
+    case 'Draft': return 'Draft'
+    case 'Active': return 'Active'
+    case 'Stale': return 'Stale'
+    case 'Closed': return 'Closed'
+    case 'fresh': return 'Fresh' // Legacy support
+    case 'stable': return 'Stable' // Legacy support
+    default: return lifecycle || 'Unknown'
   }
 }
 
 export function getLifecycleColor(lifecycle) {
   switch (lifecycle) {
-    case 'fresh': return 'blue'
-    case 'stable': return 'green'
-    case 'at-risk': return 'amber'
-    case 'stale': return 'red'
+    case 'Draft': return 'gray'
+    case 'Active': return 'green'
+    case 'Stale': return 'amber'
+    case 'Closed': return 'red'
+    case 'fresh': return 'blue' // Legacy support
+    case 'stable': return 'green' // Legacy support
     default: return 'gray'
   }
 }

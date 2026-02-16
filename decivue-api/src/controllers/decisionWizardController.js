@@ -54,7 +54,7 @@ exports.createDecisionFromWizard = async (req, res) => {
             risk_level: wizardData.basics.riskLevel || 'Medium',
             target_review_date: wizardData.basics.targetReviewDate,
             confidence_justification: wizardData.reasoning?.confidenceJustification,
-            lifecycle_state: 'Draft'
+            lifecycle_state: 'Active'
         });
 
         console.log(`[Wizard] Decision created: ${decision.id} (Parent: ${parentId})`);
