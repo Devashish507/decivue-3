@@ -1,0 +1,11 @@
+{
+    "title": "Auto-Calc Test",
+    "context": "Testing automatic urgency calculation",
+    "decision_type": "MAIN_STRATEGIC",
+    "priority_level": "CRITICAL",
+    "impact_level": "Critical",
+    "risk_level": "Critical",
+    "initial_confidence": 70,
+    "current_confidence": 70,
+    "lifecycle_state": "Active"
+}

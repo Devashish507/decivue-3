@@ -1,21 +1,54 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useDecisions } from '../hooks/useDecisions'
 import StatCard from '../components/StatCard'
 import ConfidenceGauge from '../components/ConfidenceGauge'
-import AlertBanner from '../components/AlertBanner'
+import ReviewAlertCard from '../components/ReviewAlertCard'
 import Tooltip from '../components/Tooltip'
 import { computeHealthScore } from '../utils/helpers'
 
 export default function Dashboard() {
-  const { decisions, alerts, stats } = useDecisions()
+  const { decisions, stats } = useDecisions()
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
+  const [reviewAlerts, setReviewAlerts] = useState({ GOVERNANCE_RISK: [], HIGH_PRIORITY: [], REMINDER: [], upcoming: [] })
+  const [loading, setLoading] = useState(true)
   const healthScore = computeHealthScore(decisions)
 
-  const filteredAlerts = alerts.filter(a => {
-    if (searchQuery && !a.message.toLowerCase().includes(searchQuery.toLowerCase())) return false
-    if (filterStatus !== 'all' && a.severity !== filterStatus) return false
+  // Fetch review intelligence alerts
+  useEffect(() => {
+    const fetchReviewAlerts = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/decisions/alerts')
+        const data = await response.json()
+        if (data.success) {
+          setReviewAlerts(data.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch review alerts:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchReviewAlerts()
+  }, [])
+
+  // Flatten all alerts for filtering
+  const allAlerts = [
+    ...reviewAlerts.GOVERNANCE_RISK,
+    ...reviewAlerts.HIGH_PRIORITY,
+    ...reviewAlerts.REMINDER,
+    ...reviewAlerts.upcoming
+  ]
+
+  const filteredAlerts = allAlerts.filter(a => {
+    if (searchQuery && !a.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
+    if (filterStatus !== 'all') {
+      if (filterStatus === 'governance' && a.escalationLevel !== 'GOVERNANCE_RISK') return false
+      if (filterStatus === 'priority' && a.escalationLevel !== 'HIGH_PRIORITY') return false
+      if (filterStatus === 'reminder' && a.escalationLevel !== 'REMINDER') return false
+      if (filterStatus === 'upcoming' && a.escalationLevel !== null) return false
+    }
     return true
   })
 
@@ -122,10 +155,15 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Recent Alerts Widget */}
+        {/* Review Intelligence Alerts Widget */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
           <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Alerts</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Review Intelligence Alerts</h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {reviewAlerts.GOVERNANCE_RISK.length} governance risks · {reviewAlerts.upcoming.length} upcoming reviews
+              </p>
+            </div>
 
             <div className="flex gap-2">
               <select
@@ -133,9 +171,11 @@ export default function Dashboard() {
                 onChange={e => setFilterStatus(e.target.value)}
                 className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-600 cursor-pointer hover:bg-gray-100"
               >
-                <option value="all">All Types</option>
-                <option value="risk">Risk</option>
-                <option value="warning">Warning</option>
+                <option value="all">All Alerts</option>
+                <option value="governance">Governance Risk</option>
+                <option value="priority">High Priority</option>
+                <option value="reminder">Reminders</option>
+                <option value="upcoming">Upcoming</option>
               </select>
             </div>
           </div>
@@ -156,7 +196,12 @@ export default function Dashboard() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
-            {filteredAlerts.length === 0 ? (
+            {loading ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+                <p className="text-sm font-medium text-gray-500">Loading alerts...</p>
+              </div>
+            ) : filteredAlerts.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-gray-400">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
                   <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -164,11 +209,11 @@ export default function Dashboard() {
                   </svg>
                 </div>
                 <p className="text-sm font-medium text-gray-500">All clear</p>
-                <p className="text-xs text-gray-400">No alerts matching your criteria</p>
+                <p className="text-xs text-gray-400">No review alerts at this time</p>
               </div>
             ) : (
               filteredAlerts.map(alert => (
-                <AlertBanner key={alert.id} alert={alert} />
+                <ReviewAlertCard key={alert.id} alert={alert} />
               ))
             )}
           </div>

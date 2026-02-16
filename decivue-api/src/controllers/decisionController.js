@@ -1,6 +1,7 @@
-const { Decision, Assumption, DecisionRelation, DecisionHistory, DecisionVersion, AuditLog } = require('../models');
+const { Decision, Assumption, DecisionRelation, DecisionHistory, DecisionVersion, AuditLog, sequelize } = require('../models');
 const treeService = require('../services/treeService');
 const healthService = require('../services/healthService');
+const reviewIntelligenceService = require('../services/reviewIntelligenceService');
 const { Op } = require('sequelize');
 
 exports.getAllDecisions = async (req, res) => {
@@ -271,6 +272,9 @@ exports.updateDecision = async (req, res) => {
             await healthService.updateDecisionHealth(id);
         }
 
+        // Trigger review intelligence  recalculation
+        await reviewIntelligenceService.updateReviewIntelligence(id);
+
         res.json({ success: true, data: decision });
     } catch (err) {
         console.error('Update Decision Error:', err);
@@ -280,19 +284,38 @@ exports.updateDecision = async (req, res) => {
 
 exports.createDecision = async (req, res) => {
     try {
+        console.log('[CREATE] Creating new decision...');
+
         // Governance Automation: High/Critical risk requires governance
         if (['High', 'Critical'].includes(req.body.risk_level)) {
             req.body.is_governance_required = true;
         }
 
         const decision = await Decision.create(req.body);
+        console.log('[CREATE] Decision created:', decision.id, decision.title);
+
         await DecisionHistory.create({
             decision_id: decision.id,
             event_type: 'CREATED',
             description: 'Decision created via API'
         });
+
+        // Initialize review intelligence with error handling
+        try {
+            console.log('[REVIEW] Calculating urgency score for new decision...');
+            const reviewResult = await reviewIntelligenceService.updateReviewIntelligence(decision.id);
+            console.log('[REVIEW] ✅ Score:', reviewResult.score, '| Next Review:', reviewResult.nextReviewDate);
+
+            // Reload decision to get updated values
+            await decision.reload();
+        } catch (reviewError) {
+            console.error('[REVIEW] ❌ Failed to calculate review intelligence:', reviewError);
+            // Don't fail the request, but log the error
+        }
+
         res.status(201).json({ success: true, data: decision });
     } catch (err) {
+        console.error('[CREATE] Error creating decision:', err);
         res.status(400).json({ success: false, message: err.message });
     }
 };
@@ -572,12 +595,55 @@ exports.deleteDecision = async (req, res) => {
 exports.reviewDecision = async (req, res) => {
     try {
         const { id } = req.params;
-        const { notes, status = 'Completed' } = req.body;
+        const { notes, status = 'Completed', confidenceChanged = false, assumptionUpdated = false } = req.body;
 
         const decision = await Decision.findByPk(id);
         if (!decision) return res.status(404).json({ success: false, message: 'Decision not found' });
 
-        // Create Review Log
+        // Get snapshot data for review history
+        const conflictCount = await DecisionRelation.count({
+            where: {
+                [Op.or]: [
+                    { source_decision_id: id },
+                    { target_decision_id: id }
+                ],
+                relation_type: 'CONFLICT'
+            }
+        });
+        const assumptionCount = await Assumption.count({ where: { decision_id: id } });
+
+        // Detect shallow review
+        const isShallowReview = reviewIntelligenceService.detectShallowReview({
+            notes,
+            confidenceChanged,
+            assumptionUpdated
+        });
+
+        // Create Review Snapshot
+        await require('../models').DecisionReviewHistory.create({
+            decision_id: id,
+            confidence_snapshot: decision.current_confidence,
+            conflict_count_snapshot: conflictCount,
+            assumption_count_snapshot: assumptionCount,
+            review_notes: notes,
+            reviewed_at: new Date(),
+            is_shallow_review: isShallowReview
+        });
+
+        // If shallow review, increment postpone count
+        if (isShallowReview) {
+            await decision.update({
+                postpone_count: decision.postpone_count + 1,
+                last_reviewed_at: new Date()
+            });
+        } else {
+            await decision.update({
+                postpone_count: 0, // Reset on meaningful review
+                last_reviewed_at: new Date()
+            });
+        }
+
+        // Create Review Log (old system)
         await require('../models').DecisionReview.create({
             decision_id: id,
             review_date: new Date(),
@@ -585,13 +651,11 @@ exports.reviewDecision = async (req, res) => {
             notes
         });
 
-        // Update Decision Last Review Date
-        await decision.update({
-            last_reviewed_at: new Date()
-        });
-
         // Trigger Health Update (confidence might boost)
         const newHealth = await healthService.updateDecisionHealth(id);
+
+        // Trigger review intelligence update
+        await reviewIntelligenceService.updateReviewIntelligence(id);
 
         res.json({ success: true, message: 'Review completed', data: newHealth });
 
@@ -819,6 +883,82 @@ exports.deleteAssumption = async (req, res) => {
         res.json({ success: true, message: 'Assumption deleted' });
     } catch (err) {
         console.error('Delete Assumption Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Get Review Alerts for Dashboard
+exports.getReviewAlerts = async (req, res) => {
+    console.log('[API] GET /api/decisions/alerts called');
+    try {
+        const decisions = await Decision.findAll({
+            where: {
+                [Op.or]: [
+                    { review_escalation_level: { [Op.ne]: null } }, // Has escalation
+                    {
+                        review_urgency_score: { [Op.gte]: 40 }, // High enough urgency
+                        next_review_date: { [Op.lte]: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) } // Within 30 days
+                    }
+                ]
+            },
+            order: [
+                // MySQL-compatible ordering
+                [sequelize.literal('CASE WHEN review_escalation_level = "GOVERNANCE_RISK" THEN 3 WHEN review_escalation_level = "HIGH_PRIORITY" THEN 2 WHEN review_escalation_level = "REMINDER" THEN 1 ELSE 0 END'), 'DESC'],
+                ['review_urgency_score', 'DESC']
+            ],
+            limit: 20
+        });
+
+        // Group by escalation level
+        const alerts = {
+            GOVERNANCE_RISK: [],
+            HIGH_PRIORITY: [],
+            REMINDER: [],
+            upcoming: []
+        };
+
+        for (const decision of decisions) {
+            // Get what changed
+            const changes = await reviewIntelligenceService.getWhatChanged(decision.id);
+
+            // Calculate days overdue
+            let daysOverdue = null;
+            if (decision.next_review_date && new Date() > new Date(decision.next_review_date)) {
+                daysOverdue = Math.floor((new Date() - new Date(decision.next_review_date)) / (1000 * 60 * 60 * 24));
+            }
+
+            const alertData = {
+                id: decision.id,
+                title: decision.title,
+                urgencyScore: decision.review_urgency_score,
+                escalationLevel: decision.review_escalation_level,
+                nextReviewDate: decision.next_review_date,
+                daysOverdue,
+                whatChanged: changes,
+                riskLevel: decision.risk_level,
+                impactLevel: decision.impact_level
+            };
+
+            if (decision.review_escalation_level) {
+                alerts[decision.review_escalation_level].push(alertData);
+            } else {
+                alerts.upcoming.push(alertData);
+            }
+        }
+
+        res.json({
+            success: true,
+            data: alerts,
+            summary: {
+                governanceRisk: alerts.GOVERNANCE_RISK.length,
+                highPriority: alerts.HIGH_PRIORITY.length,
+                reminder: alerts.REMINDER.length,
+                upcoming: alerts.upcoming.length
+            }
+        });
+
+    } catch (err) {
+        console.error('Get Review Alerts Error:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 };

@@ -9,6 +9,9 @@ router.post('/wizard/create', wizardController.createDecisionFromWizard);
 router.post('/wizard/validate', wizardController.validateWizardData);
 router.get('/search', wizardController.searchDecisions);
 
+// Review Alerts (must be before ANY /:id routes)
+router.get('/alerts', decisionController.getReviewAlerts);
+
 // Sub-Decisions
 router.post('/:parentId/sub', decisionController.createSubDecision);
 router.patch('/sub-decision/:id/progress', decisionController.updateProgress);

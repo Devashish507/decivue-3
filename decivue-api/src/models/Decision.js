@@ -46,6 +46,7 @@ module.exports = (sequelize, DataTypes) => {
 
             // Governance & Team
             Decision.belongsTo(models.Team, { foreignKey: 'team_id', as: 'team' });
+            Decision.hasMany(models.DecisionReviewHistory, { foreignKey: 'decision_id', as: 'reviewHistory' });
         }
     }
 
@@ -138,6 +139,22 @@ module.exports = (sequelize, DataTypes) => {
         team_id: {
             type: DataTypes.UUID,
             allowNull: true
+        },
+
+        // Review Intelligence Fields
+        review_urgency_score: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+            validate: { min: 0, max: 100 }
+        },
+        next_review_date: DataTypes.DATE,
+        review_escalation_level: {
+            type: DataTypes.ENUM('REMINDER', 'HIGH_PRIORITY', 'GOVERNANCE_RISK'),
+            allowNull: true
+        },
+        postpone_count: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
         }
     }, {
         sequelize,
