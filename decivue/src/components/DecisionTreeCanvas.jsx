@@ -17,11 +17,11 @@ import dagre from 'dagre'
 
 import DecisionNodeCard from './DecisionNodeCard'
 import ConflictEdge from './ConflictEdge'
-import TreeControlsBar from './TreeControlsBar'
 import DecisionSidePanel from './DecisionSidePanel'
 import EditDecisionModal from './EditDecisionModal'
 import { useDecisions } from '../hooks/useDecisions'
 import { getRelatedCluster } from '../utils/treeHelpers'
+import { ArrowLeft } from 'lucide-react'
 
 const nodeTypes = {
     decision: DecisionNodeCard,
@@ -120,11 +120,6 @@ function DecisionTreeFlow({ decisions: initialDecisions, initialFocusId }) {
     const [searchParams] = useSearchParams()
     const focusId = initialFocusId || searchParams.get('focusId')
 
-    // Filters & Toggles
-    const [searchTerm, setSearchTerm] = useState('')
-    const [statusFilter, setStatusFilter] = useState('all')
-    const [showConflicts, setShowConflicts] = useState(true)
-
     const navigate = useNavigate()
     const { fitView, setCenter } = useReactFlow()
 
@@ -145,15 +140,7 @@ function DecisionTreeFlow({ decisions: initialDecisions, initialFocusId }) {
             }
         }
 
-        // Apply Filters
-        if (searchTerm) {
-            filteredDecisions = filteredDecisions.filter(d =>
-                d.statement.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-        }
-        if (statusFilter !== 'all') {
-            filteredDecisions = filteredDecisions.filter(d => d.healthStatus === statusFilter)
-        }
+        // No filters applied - show all decisions
 
         const newNodes = filteredDecisions.map(d => ({
             id: d.id,
@@ -210,8 +197,7 @@ function DecisionTreeFlow({ decisions: initialDecisions, initialFocusId }) {
                     // Skip if it is a hierarchy relation we already handled via parentId
                     if (type === 'SUB_DECISION') return
 
-                    // Special: If it is a conflict, check global toggle
-                    if (type === 'CONFLICTS_WITH' && !showConflicts) return
+                    // Show all conflicts
 
                     newEdges.push({
                         id: `rel-${rel.id}`,
@@ -238,7 +224,7 @@ function DecisionTreeFlow({ decisions: initialDecisions, initialFocusId }) {
             }
 
             // Conflict Edges (Legacy support or if explicit conflict field used)
-            if (showConflicts && d.conflict && d.conflict.withDecisionId && filteredDecisions.find(c => c.id === d.conflict.withDecisionId)) {
+            if (d.conflict && d.conflict.withDecisionId && filteredDecisions.find(c => c.id === d.conflict.withDecisionId)) {
                 // Avoid duplicate edges if already added by relations
                 if (newEdges.find(e => e.id === `rel-${d.id}-${d.conflict.withDecisionId}` || e.id === `conflict-${d.id}-${d.conflict.withDecisionId}`)) return
 
@@ -257,7 +243,7 @@ function DecisionTreeFlow({ decisions: initialDecisions, initialFocusId }) {
         setNodes(layouted.nodes)
         setEdges(layouted.edges)
 
-    }, [decisions, searchTerm, statusFilter, showConflicts])
+    }, [decisions])
 
     // Handle Focus
     useEffect(() => {
@@ -317,18 +303,18 @@ function DecisionTreeFlow({ decisions: initialDecisions, initialFocusId }) {
 
     return (
         <div className="h-full flex flex-col bg-gray-50">
+            {/* Back Button */}
+            <div className="absolute top-6 left-6 z-10">
+                <button
+                    onClick={() => navigate('/')}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium text-sm hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm hover:shadow"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Dashboard
+                </button>
+            </div>
+
             <div className="flex-1 relative h-full">
-                <TreeControlsBar
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    statusFilter={statusFilter}
-                    onStatusFilterChange={setStatusFilter}
-                    showConflicts={showConflicts}
-                    onToggleConflicts={setShowConflicts}
-                    onAutoLayout={handleLayout}
-                    focusId={focusId}
-                    navigate={navigate}
-                />
 
                 <ReactFlow
                     nodes={nodes}
