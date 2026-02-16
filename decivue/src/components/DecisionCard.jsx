@@ -6,7 +6,7 @@ import ConfidenceGauge from './ConfidenceGauge'
 import GovernanceBadge from './GovernanceBadge'
 import { getLifecycleLabel, getLifecycleColor } from '../utils/helpers'
 
-export default function DecisionCard({ decision, onEdit }) {
+export default function DecisionCard({ decision, onEdit, showDelete = false, onDelete }) {
   // Calculate days since last review
   const getDaysSinceReview = (dateString) => {
     if (!dateString) return null
@@ -33,8 +33,9 @@ export default function DecisionCard({ decision, onEdit }) {
       className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col h-full shadow-sm hover:shadow-xl transition-all duration-300 relative group overflow-hidden"
     >
       {/* Decorative top border based on health */}
-      <div className={`absolute top-0 left-0 right-0 h-1 transition-colors duration-300 ${decision.healthStatus === 'healthy' ? 'bg-green-500' :
-        decision.healthStatus === 'needs-review' ? 'bg-amber-500' :
+      {/* Decorative top border based on confidence score */}
+      <div className={`absolute top-0 left-0 right-0 h-1 transition-colors duration-300 ${decision.confidence >= 70 ? 'bg-green-500' :
+        decision.confidence >= 50 ? 'bg-amber-500' :
           'bg-red-500'
         }`} />
 
@@ -49,9 +50,6 @@ export default function DecisionCard({ decision, onEdit }) {
               size="sm"
               compact={true}
             />
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${lifecycleColorMap[lcColor] || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
-              {getLifecycleLabel(decision.lifecycleState)}
-            </span>
           </div>
           <Link
             to={`/decisions/${decision.id}`}
@@ -109,6 +107,7 @@ export default function DecisionCard({ decision, onEdit }) {
             onEdit && onEdit(decision)
           }}
           className="p-2 bg-white text-gray-400 hover:text-blue-600 rounded-xl shadow-md border border-gray-100 hover:border-blue-100 transition-all active:scale-95"
+          title="Edit Decision"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

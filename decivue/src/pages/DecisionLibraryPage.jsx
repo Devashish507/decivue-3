@@ -7,13 +7,18 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import AddDecisionWizard from '../components/AddDecisionWizard';
 import EditDecisionModal from '../components/EditDecisionModal';
 
+
+
 export default function DecisionLibraryPage() {
     const { decisions, loading, error, refresh, updateDecision } = useDecisions();
+    const navigate = useNavigate();
+
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('lastReviewed');
     const [filterHealth, setFilterHealth] = useState('all');
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [editingDecision, setEditingDecision] = useState(null);
+
 
     // Filter and sort decisions
     const filteredDecisions = useMemo(() => {
@@ -145,6 +150,8 @@ export default function DecisionLibraryPage() {
                 )}
             </AnimatePresence>
 
+
+
             {/* Decision Grid */}
             <div className="max-w-7xl mx-auto px-6 py-8">
                 {filteredDecisions.length === 0 ? (
@@ -159,7 +166,7 @@ export default function DecisionLibraryPage() {
                     </div>
                 ) : (
                     <motion.div
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3 }}

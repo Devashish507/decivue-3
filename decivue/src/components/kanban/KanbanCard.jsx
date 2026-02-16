@@ -44,17 +44,6 @@ export default function KanbanCard({ decision, cardColor = '#F4A261', isDragOver
                 >
                     {decision.statement || decision.title || 'Untitled Decision'}
                 </Link>
-
-                <button
-                    className="flex-shrink-0 opacity-0 group-hover:opacity-70 hover:!opacity-100 text-gray-700 hover:text-red-700 transition-all p-1 rounded"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        // Future: handle delete
-                    }}
-                    title="Remove"
-                >
-                    <Trash2 className="w-3.5 h-3.5" />
-                </button>
             </div>
         </div>
     );

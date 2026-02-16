@@ -71,7 +71,17 @@ export const DecisionProvider = ({ children }) => {
   }
 
   const deleteDecision = async (id) => {
-    // Placeholder
+    try {
+      await decisionService.delete(id)
+      // Optimistic update
+      setDecisions(prev => prev.filter(d => d.id !== id))
+      // Background refresh to ensure consistency
+      fetchDecisions({ includeSubDecisions: true })
+      return true
+    } catch (err) {
+      console.error('Failed to delete decision:', err)
+      throw err
+    }
   }
 
   const reaffirmDecision = async (id) => {
