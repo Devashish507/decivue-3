@@ -25,6 +25,10 @@ router.get('/:id/versions/:versionId', versionController.getVersionDetails);
 router.put('/:id/assumptions/:assumptionId', decisionController.editAssumption);
 router.delete('/:id/assumptions/:assumptionId', decisionController.deleteAssumption);
 
+// Team Map & Roles (Must come BEFORE generic /:id to avoid matching issues)
+router.post('/:id/team-map', decisionController.addToTeam); // Add to Team Space
+router.put('/:id/team-roles', decisionController.updateTeamRoles); // Update Team Roles
+
 // Basic CRUD
 router.get('/', decisionController.getAllDecisions);
 router.post('/', decisionController.createDecision);

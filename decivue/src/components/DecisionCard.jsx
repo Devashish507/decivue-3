@@ -96,7 +96,23 @@ export default function DecisionCard({ decision, onEdit, showDelete = false, onD
 
         {/* Footer: Risk & Review */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-          <RiskTag level={decision.riskLevel} />
+          <div className="flex flex-col gap-2">
+            <RiskTag level={decision.riskLevel} />
+            {decision.teamMap && (decision.teamMap.owner_id || decision.teamMap.reviewer_id) && (
+              <div className="flex flex-wrap gap-2 mt-1">
+                {decision.teamMap.owner_id && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100" title={`Owner: ${decision.teamMap.owner_id}`}>
+                    O: {decision.teamMap.owner_id.split('_').pop() || 'User'}
+                  </span>
+                )}
+                {decision.teamMap.reviewer_id && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-100" title={`Reviewer: ${decision.teamMap.reviewer_id}`}>
+                    R: {decision.teamMap.reviewer_id.split('_').pop() || 'Reviewer'}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="flex items-center gap-1.5 text-xs font-medium">
             <svg className={`w-3.5 h-3.5 ${reviewStatusColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

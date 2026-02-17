@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const fs = require('fs');
+const path = require('path');
 const decisionRoutes = require('./src/routes/decisionRoutes');
 const attachmentRoutes = require('./src/routes/attachmentRoutes');
 const teamRoutes = require('./src/routes/teamRoutes');
@@ -16,6 +18,20 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Debug middleware with file logging
+app.use((req, res, next) => {
+    const logMsg = `${new Date().toISOString()} - [DEBUG] ${req.method} ${req.url}\n`;
+    console.log(logMsg.trim());
+    try {
+        const fs = require('fs');
+        fs.appendFileSync('test_results.txt', logMsg);
+    } catch (e) { }
+    next();
+});
+
+// Diagnostic route
+app.get('/api/test-routing', (req, res) => res.json({ success: true, message: 'Backend routing is working' }));
 
 // Routes
 app.use('/api/decisions', decisionRoutes);

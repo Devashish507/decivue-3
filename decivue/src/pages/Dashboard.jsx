@@ -19,7 +19,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchReviewAlerts = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/decisions/alerts')
+        const response = await fetch('/api/decisions/alerts')
         const data = await response.json()
         if (data.success) {
           setReviewAlerts(data.data)

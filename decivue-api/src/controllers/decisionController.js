@@ -84,97 +84,6 @@ exports.getAllDecisions = async (req, res) => {
     }
 };
 
-exports.getDecisionById = async (req, res) => {
-    try {
-        console.log(`[API] Fetching decision with ID: ${req.params.id}`);
-
-        const decision = await Decision.findByPk(req.params.id, {
-            include: [
-                { model: Assumption, as: 'assumptions' },
-                { model: DecisionHistory, as: 'history' },
-                { model: Decision, as: 'parent' },
-                { model: require('../models').SubDecisionTracking, as: 'tracking' },
-                {
-                    model: Decision,
-                    as: 'children',
-                    attributes: ['id', 'title', 'lifecycle_state', 'current_confidence', 'risk_level', 'progress_percentage'],
-                    include: [{ model: require('../models').SubDecisionTracking, as: 'tracking' }]
-                },
-                {
-                    model: DecisionRelation,
-                    as: 'outgoingRelations',
-                    include: [{
-                        model: Decision,
-                        as: 'targetDecision',
-                        attributes: ['id', 'title']
-                    }]
-                },
-                {
-                    model: DecisionRelation,
-                    as: 'incomingRelations',
-                    include: [{
-                        model: Decision,
-                        as: 'sourceDecision',
-                        attributes: ['id', 'title']
-                    }]
-                },
-                { model: AuditLog, as: 'auditLogs' }
-            ]
-        });
-
-        if (!decision) {
-            console.log(`[API] Decision not found: ${req.params.id}`);
-            return res.status(404).json({
-                success: false,
-                message: 'Decision not found'
-            });
-        }
-
-        console.log(`[API] Decision found: ${decision.title}`);
-        console.log(`[API] Assumptions count: ${decision.assumptions?.length || 0}`);
-        console.log(`[API] History events count: ${decision.history?.length || 0}`);
-
-        // Validate decision data completeness
-        if (!decision.id || !decision.title) {
-            console.error(`[API] Decision has missing required fields:`, {
-                id: decision.id,
-                title: decision.title
-            });
-            return res.status(500).json({
-                success: false,
-                message: 'Decision data is incomplete - missing required fields'
-            });
-        }
-
-        // Log warnings for missing optional fields
-        if (!decision.context) console.warn(`[API] Decision ${decision.id} missing context`);
-        if (!decision.current_confidence) console.warn(`[API] Decision ${decision.id} missing current_confidence`);
-
-        // Calculate dynamic health info on fetch
-        const { healthScore, newHealthStatus, conflicts, logEvents } = await healthService.calculateHealth(decision);
-
-        res.json({
-            success: true,
-            data: {
-                ...decision.toJSON(),
-                calculated_confidence: healthScore, // Dynamic confidence based on criteria
-                calculated_health: {
-                    score: healthScore,
-                    status: newHealthStatus,
-                    conflict_count: conflicts,
-                    log_events: logEvents
-                }
-            }
-        });
-    } catch (err) {
-        console.error('[API] Error fetching decision:', err.message);
-        console.error('[API] Stack trace:', err.stack);
-        res.status(500).json({
-            success: false,
-            message: err.message
-        });
-    }
-};
 
 exports.getDecisionTree = async (req, res) => {
     try {
@@ -769,6 +678,12 @@ exports.getDecisionById = async (req, res) => {
                 { model: Decision, as: 'parent' },
                 { model: require('../models').SubDecisionTracking, as: 'tracking' },
                 {
+                    model: DecisionTeamMap,
+                    as: 'teamMap',
+                    attributes: ['id', 'team_id', 'owner_id', 'reviewer_id']
+                },
+
+                {
                     model: Decision,
                     as: 'children',
                     attributes: ['id', 'title', 'lifecycle_state', 'current_confidence', 'risk_level', 'progress_percentage', 'start_date', 'target_date', 'health_score'],
@@ -1044,5 +959,83 @@ exports.getConflicts = async (req, res) => {
     } catch (err) {
         console.error('Get Conflicts Error:', err);
         res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.addToTeam = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { teamId } = req.body; // Optional, otherwise use default
+
+        const decision = await Decision.findByPk(id);
+        if (!decision) {
+            console.error(`[API] Decision not found in addToTeam: ${id}`);
+            return res.status(404).json({ success: false, message: `Decision with ID ${id} not found in database` });
+        }
+
+        // Find default team if not provided
+        let targetTeamId = teamId;
+        if (!targetTeamId) {
+            const defaultTeam = await Team.findOne();
+            if (!defaultTeam) {
+                return res.status(400).json({ success: false, message: 'No default team found. Please seed teams first.' });
+            }
+            targetTeamId = defaultTeam.id;
+        }
+
+        // Create mapping
+        const [mapping, created] = await DecisionTeamMap.findOrCreate({
+            where: { decision_id: id, team_id: targetTeamId },
+            defaults: { decision_id: id, team_id: targetTeamId }
+        });
+
+        // Update decision's team_id for consistency (optional but good for direct relation)
+        await decision.update({ team_id: targetTeamId });
+
+        return res.json({
+            success: true,
+            message: created ? 'Added to Team Space' : 'Already in Team Space',
+            data: mapping
+        });
+    } catch (err) {
+        console.error('[API] Error in addToTeam:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+exports.updateTeamRoles = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { ownerId, reviewerId } = req.body;
+
+        // Find the mapping (assuming single team for now)
+        const mapping = await DecisionTeamMap.findOne({ where: { decision_id: id } });
+
+        if (!mapping) {
+            return res.status(404).json({ success: false, message: 'Decision is not in Team Space. Add it first.' });
+        }
+
+        // Update roles
+        if (ownerId !== undefined) mapping.owner_id = ownerId;
+        if (reviewerId !== undefined) mapping.reviewer_id = reviewerId;
+        await mapping.save();
+
+        // Also update Decision for sync if needed (optional)
+        const decision = await Decision.findByPk(id);
+        if (decision) {
+            if (ownerId !== undefined) decision.owner_id = ownerId;
+            if (reviewerId !== undefined) decision.reviewer_id = reviewerId;
+            await decision.save();
+        }
+
+        return res.json({
+            success: true,
+            message: 'Team roles updated',
+            data: mapping
+        });
+
+    } catch (err) {
+        console.error('[API] Error in updateTeamRoles:', err);
+        return res.status(500).json({ success: false, message: err.message });
     }
 };

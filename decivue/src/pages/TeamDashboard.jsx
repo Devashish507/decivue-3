@@ -1,20 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { teamService } from '../services/api';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { teamService, decisionService } from '../services/api';
 import { useLayout } from '../contexts/LayoutContext';
 import { Users, AlertTriangle, Activity, Shield } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import DecisionCard from '../components/DecisionCard';
 import ManageMembersModal from '../components/ManageMembersModal';
 import DecisionKanban from '../components/kanban/DecisionKanban';
+import AssignRoleModal from '../components/AssignRoleModal';
 
 export default function TeamDashboard() {
     const { id } = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();
     const [teamData, setTeamData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showAddMember, setShowAddMember] = useState(false);
+    const [assigningRolesFor, setAssigningRolesFor] = useState(null); // { id, title, teamMap }
     const [view, setView] = useState('list');
     const { setHideSidebar, setFullWidth } = useLayout();
+
+    // Parse query params
+    const queryParams = new URLSearchParams(location.search);
+    const assignRolesId = queryParams.get('assignRoles');
+
+    useEffect(() => {
+        if (assignRolesId && teamData && teamData.decisions) {
+            const decision = teamData.decisions.find(d => d.id === assignRolesId);
+            if (decision && !assigningRolesFor) {
+                setAssigningRolesFor(decision);
+                // Clear the query param without refreshing
+                navigate(location.pathname, { replace: true });
+            }
+        }
+    }, [assignRolesId, teamData, location.pathname, navigate]);
 
     // Hide sidebar & go fullWidth when in kanban, restore when leaving
     useEffect(() => {
@@ -48,6 +67,18 @@ export default function TeamDashboard() {
             console.error('Error fetching team data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateRoles = async (updatedRoles) => {
+        if (!assigningRolesFor) return;
+        try {
+            await decisionService.updateTeamRoles(assigningRolesFor.id, updatedRoles);
+            setAssigningRolesFor(null);
+            fetchTeamData(); // Refresh to show new roles
+        } catch (error) {
+            console.error('Error updating roles:', error);
+            alert('Failed to update roles: ' + error.message);
         }
     };
 
@@ -143,7 +174,11 @@ export default function TeamDashboard() {
                                             </div>
                                         ) : (
                                             decisions.map(decision => (
-                                                <DecisionCard key={decision.id} decision={decision} />
+                                                <DecisionCard
+                                                    key={decision.id}
+                                                    decision={decision}
+                                                    onEdit={(d) => setAssigningRolesFor(d)}
+                                                />
                                             ))
                                         )}
                                     </div>
@@ -159,6 +194,18 @@ export default function TeamDashboard() {
                     members={members}
                     onClose={() => setShowAddMember(false)}
                     onUpdate={fetchTeamData}
+                />
+            )}
+            {assigningRolesFor && (
+                <AssignRoleModal
+                    isOpen={!!assigningRolesFor}
+                    onClose={() => setAssigningRolesFor(null)}
+                    decisionId={assigningRolesFor.id}
+                    currentRoles={{
+                        ownerId: assigningRolesFor.teamMap?.owner_id,
+                        reviewerId: assigningRolesFor.teamMap?.reviewer_id
+                    }}
+                    onRoleUpdate={handleUpdateRoles}
                 />
             )}
         </>

@@ -7,6 +7,28 @@ const api = axios.create({
     },
 });
 
+// Local persistence for UI-only prototype
+const LOCAL_TEAM_KEY = 'decivue_local_team_maps';
+
+const getLocalTeamMaps = () => {
+    try {
+        const data = localStorage.getItem(LOCAL_TEAM_KEY);
+        return data ? JSON.parse(data) : {};
+    } catch (e) {
+        return {};
+    }
+};
+
+const saveLocalTeamMap = (id, map) => {
+    const maps = getLocalTeamMaps();
+    maps[id] = {
+        ...maps[id],
+        ...map,
+        updatedAt: new Date().toISOString()
+    };
+    localStorage.setItem(LOCAL_TEAM_KEY, JSON.stringify(maps));
+};
+
 const transformDecision = (d) => {
     if (!d) {
         console.warn('transformDecision: Received null or undefined decision');
@@ -127,6 +149,7 @@ const transformDecision = (d) => {
         isGovernanceRequired: d.is_governance_required,
         governanceStatus: d.governance_status || 'Draft',
         reviewerId: d.reviewer_id || (d.teamMap ? d.teamMap.reviewer_id : null),
+        teamMap: d.teamMap, // Pass through team map info
         auditLogs: d.auditLogs || [],
 
         // Relationship data for graph visualization
@@ -185,6 +208,16 @@ export const decisionService = {
             console.log('[API Service] Starting transformation for decision:', response.data.data.id);
 
             try {
+                // Merge local team map if exists
+                const localMaps = getLocalTeamMaps();
+                if (localMaps[id]) {
+                    response.data.data.teamMap = {
+                        ...response.data.data.teamMap,
+                        ...localMaps[id]
+                    };
+                    console.log('[API Service] Merged local team map for decision:', id);
+                }
+
                 const transformed = transformDecision(response.data.data);
 
                 if (!transformed) {
@@ -251,6 +284,41 @@ export const decisionService = {
         }
 
         return transformDecision(createdDecision);
+    },
+
+    addToTeam: async (id, teamId = 'default-team') => {
+        // Mock implementation for UI-only
+        const teamMap = {
+            id: `local-${Date.now()}`,
+            team_id: teamId || 'default-team',
+            owner_id: null,
+            reviewer_id: null,
+            addedAt: new Date().toISOString()
+        };
+        saveLocalTeamMap(id, teamMap);
+
+        // Also try to hit the backend but don't fail if it 404s
+        try {
+            await api.post(`/${id}/team-map`, { teamId });
+        } catch (e) {
+            console.warn('Backend addToTeam failed, using local fallback:', e.message);
+        }
+
+        return { success: true, data: teamMap };
+    },
+
+    updateTeamRoles: async (id, roles) => {
+        // Mock implementation for UI-only
+        saveLocalTeamMap(id, roles);
+
+        // Also try to hit the backend but don't fail if it 404s
+        try {
+            await api.put(`/${id}/team-roles`, roles);
+        } catch (e) {
+            console.warn('Backend updateTeamRoles failed, using local fallback:', e.message);
+        }
+
+        return { success: true };
     },
 
     // Action methods
@@ -393,10 +461,44 @@ export const teamService = {
         return response.data;
     },
     getDashboard: async (id) => {
-        const response = await axios.get(`/api/teams/${id}/dashboard`);
-        if (response.data.success && response.data.data.decisions) {
-            response.data.data.decisions = response.data.data.decisions.map(transformDecision);
+        const teamId = id || 'default';
+        const response = await axios.get(`/api/teams/${teamId}/dashboard`);
+
+        // Ensure data structures exist
+        if (!response.data.data) response.data.data = {};
+        if (!response.data.data.decisions) response.data.data.decisions = [];
+        if (!response.data.data.stats) response.data.data.stats = { active: 0, underReview: 0, highImpact: 0, governanceLocked: 0 };
+
+        // Process existing decisions
+        response.data.data.decisions = response.data.data.decisions.map(transformDecision);
+
+        // Find decisions added locally to this specific team
+        const localMaps = getLocalTeamMaps();
+        const locallyAddedIds = Object.keys(localMaps).filter(decId =>
+            localMaps[decId].team_id === teamId || (teamId === 'default' && localMaps[decId].team_id === 'default-team')
+        );
+
+        // If we have locally added decisions not yet in the dashboard list
+        const existingIds = new Set(response.data.data.decisions.map(d => d.id));
+        const missingIds = locallyAddedIds.filter(id => !existingIds.has(id));
+
+        if (missingIds.length > 0) {
+            console.log('[API Service] Found locally added decisions missing from dashboard:', missingIds);
+
+            // Try to fetch missing decisions to include them in the dashboard
+            // We'll use Promise.allSettled to fetch what we can
+            const fetchPromises = missingIds.map(mid => decisionService.getById(mid).catch(() => null));
+            const fetchedDecisions = await Promise.all(fetchPromises);
+
+            fetchedDecisions.forEach(d => {
+                if (d) {
+                    response.data.data.decisions.push(d);
+                    // Update stats if necessary
+                    response.data.data.stats.active += 1;
+                }
+            });
         }
+
         return response.data;
     },
     addMember: async (teamId, data) => {

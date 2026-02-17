@@ -5,17 +5,11 @@ async function checkData() {
         await sequelize.authenticate();
         console.log('Connected to database.\n');
 
-        const [results] = await sequelize.query('SELECT * FROM DecisionVersions ORDER BY created_at DESC LIMIT 5;');
+        const [results] = await sequelize.query('SELECT id, title FROM Decisions;');
 
-        console.log('=== Recent DecisionVersions Records ===\n');
+        console.log('=== Decisions in DB ===\n');
         results.forEach((row, idx) => {
-            console.log(`Record ${idx + 1}:`);
-            console.log(`  ID: ${row.id}`);
-            console.log(`  Version: ${row.version_number}`);
-            console.log(`  snapshot_json: ${row.snapshot_json === null ? 'NULL' : typeof row.snapshot_json}`);
-            console.log(`  snapshot_json value: ${JSON.stringify(row.snapshot_json)?.substring(0, 100)}`);
-            console.log(`  changed_fields_json: ${row.changed_fields_json === null ? 'NULL' : typeof row.changed_fields_json}`);
-            console.log('');
+            console.log(`${idx + 1}. ID: ${row.id} - Title: ${row.title}`);
         });
 
         await sequelize.close();
