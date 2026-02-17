@@ -1,4 +1,4 @@
-const { Decision, DecisionRelation, DecisionHistory, DecisionNode, DecisionEdge } = require('../models');
+const { Decision, DecisionRelation, DecisionHistory, DecisionNode, DecisionEdge, DecisionTeamMap, Team } = require('../models');
 const reasoningTreeGenerator = require('../services/reasoningTreeGenerator');
 const conflictDetectionService = require('../services/conflictDetectionService');
 const healthService = require('../services/healthService');
@@ -138,6 +138,20 @@ exports.createDecisionFromWizard = async (req, res) => {
             relationships: wizardData.relationships || [],
             detected_conflicts: detectedConflicts
         };
+
+        // Auto-map decision to the default team so it appears in Team Space
+        try {
+            const defaultTeam = await Team.findOne();
+            if (defaultTeam) {
+                await DecisionTeamMap.findOrCreate({
+                    where: { decision_id: decision.id, team_id: defaultTeam.id },
+                    defaults: { decision_id: decision.id, team_id: defaultTeam.id }
+                });
+                console.log('[Wizard] Decision mapped to default team:', defaultTeam.name);
+            }
+        } catch (teamMapError) {
+            console.error('[Wizard] Failed to map decision to team:', teamMapError.message);
+        }
 
         res.status(201).json({
             success: true,

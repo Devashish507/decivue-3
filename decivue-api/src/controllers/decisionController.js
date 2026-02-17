@@ -1,4 +1,4 @@
-const { Decision, Assumption, DecisionRelation, DecisionHistory, DecisionVersion, AuditLog, sequelize } = require('../models');
+const { Decision, Assumption, DecisionRelation, DecisionHistory, DecisionVersion, AuditLog, DecisionTeamMap, Team, sequelize } = require('../models');
 const treeService = require('../services/treeService');
 const healthService = require('../services/healthService');
 const reviewIntelligenceService = require('../services/reviewIntelligenceService');
@@ -364,6 +364,20 @@ exports.createDecision = async (req, res) => {
             }
         } catch (conflictError) {
             console.error('[CONFLICT] Failed to detect conflicts:', conflictError);
+        }
+
+        // Auto-map decision to the default team so it appears in Team Space
+        try {
+            const defaultTeam = await Team.findOne();
+            if (defaultTeam) {
+                await DecisionTeamMap.findOrCreate({
+                    where: { decision_id: decision.id, team_id: defaultTeam.id },
+                    defaults: { decision_id: decision.id, team_id: defaultTeam.id }
+                });
+                console.log('[CREATE] Decision mapped to default team:', defaultTeam.name);
+            }
+        } catch (teamMapError) {
+            console.error('[CREATE] Failed to map decision to team:', teamMapError.message);
         }
 
         res.status(201).json({ success: true, data: decision });

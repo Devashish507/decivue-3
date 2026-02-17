@@ -44,12 +44,22 @@ export default function DecisionCard({ decision, onEdit, showDelete = false, onD
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <HealthBadge status={decision.healthStatus} size="sm" />
-            <GovernanceBadge
-              status={decision.governance_status || 'Draft'}
-              required={decision.isGovernanceRequired}
-              size="sm"
-              compact={true}
-            />
+
+            {/* Lifecycle Badge */}
+            <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${lifecycleColorMap[lcColor] || lifecycleColorMap.gray}`}>
+              {getLifecycleLabel(decision.lifecycleState)}
+            </span>
+
+            {/* Only show Governance badge if it's not Draft, OR if lifecycle is also Draft */}
+            {/* Prevents showing [Active] [Draft] which is confusing */}
+            {((decision.governance_status && decision.governance_status !== 'Draft') || decision.lifecycleState === 'Draft') && (
+              <GovernanceBadge
+                status={decision.governance_status || 'Draft'}
+                required={decision.isGovernanceRequired}
+                size="sm"
+                compact={true}
+              />
+            )}
           </div>
           <Link
             to={`/decisions/${decision.id}`}

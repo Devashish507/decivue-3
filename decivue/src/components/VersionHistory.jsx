@@ -59,15 +59,12 @@ export default function VersionHistory({ decisionId, currentDecision, onCompare 
     if (versions.length === 0) return <div className="p-4 text-center text-gray-400">No edit history available for this decision.</div>;
 
     const getDriftColor = (status) => {
-        switch (status) {
-            case 'SIGNIFICANTLY DRIFTED': return 'bg-red-100 text-red-800 border-red-200';
-            case 'SLIGHTLY DRIFTED': return 'bg-amber-100 text-amber-800 border-amber-200';
-            default: return 'bg-green-100 text-green-800 border-green-200';
-        }
+        if (status === 'DRIFT_DETECTED') return 'bg-amber-100 text-amber-800 border-amber-200';
+        return 'bg-green-100 text-green-800 border-green-200';
     };
 
     const getDriftIcon = (status) => {
-        if (status === 'ON TRACK') return <CheckCircle className="w-5 h-5" />;
+        if (status === 'ON_TRACK') return <CheckCircle className="w-5 h-5" />;
         return <AlertTriangle className="w-5 h-5" />;
     };
 
@@ -88,99 +85,41 @@ export default function VersionHistory({ decisionId, currentDecision, onCompare 
                             </div>
                             <div>
                                 <h4 className="font-bold text-gray-900 flex items-center gap-2">
-                                    {driftData.status}
-                                    <span className={`text-xs px-2 py-0.5 rounded-full border ${getDriftColor(driftData.status)}`}>
-                                        Drift Score: {driftData.score}
-                                    </span>
+                                    {driftData.status === 'ON_TRACK' ? 'On Track' : 'Decision Drift Detected'}
                                 </h4>
                                 <p className="text-sm text-gray-600">
-                                    Compared to original version
+                                    {driftData.status === 'ON_TRACK'
+                                        ? 'No major changes from original decision.'
+                                        : 'Compared to original version'}
                                 </p>
                             </div>
                         </div>
-                        {driftData.details.length >= 0 && (
+                        {driftData.reasons.length > 0 && (
                             <button
                                 onClick={() => setShowDriftDetails(!showDriftDetails)}
                                 className="text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1"
                             >
-                                {showDriftDetails ? 'Hide Details' : 'View Details'}
+                                {showDriftDetails ? 'Hide Reasons' : 'View Reasons'}
                                 {showDriftDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                             </button>
                         )}
                     </div>
 
-                    {showDriftDetails && driftData.details.length >= 0 && (
+                    {showDriftDetails && driftData.reasons.length > 0 && (
                         <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             className="mt-4 pt-4 border-t border-gray-200/50 overflow-hidden"
                         >
-                            <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Drift Factors</h5>
-                            {driftData.details.length > 0 ? (
-                                <ul className="space-y-2 mb-4">
-                                    {driftData.details.map((detail, idx) => (
-                                        <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                                            <span className="mt-1.5 w-1 h-1 rounded-full bg-gray-400" />
-                                            {detail}
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-gray-500 mb-4">No significant drift detected.</p>
-                            )}
-
-                            {/* Detailed Debug Info */}
-                            <div className="bg-gray-50 p-3 rounded text-xs font-mono text-gray-600 border border-gray-200 overflow-x-auto">
-                                {(() => {
-                                    const safeGetSnapshot = (v) => {
-                                        if (!v || !v.snapshot_json) return {};
-                                        try {
-                                            return typeof v.snapshot_json === 'string' ? JSON.parse(v.snapshot_json) : v.snapshot_json;
-                                        } catch (e) {
-                                            return { title: 'Error parsing snapshot' };
-                                        }
-                                    };
-
-                                    // Use the same logic as driftData to find the baseline
-                                    const sortedVersions = [...versions].sort((a, b) => a.version_number - b.version_number);
-                                    let original = sortedVersions[0];
-                                    for (const v of sortedVersions) {
-                                        try {
-                                            const s = typeof v.snapshot_json === 'string' ? JSON.parse(v.snapshot_json) : v.snapshot_json;
-                                            if (s && (s.title || s.statement)) {
-                                                original = v;
-                                                break;
-                                            }
-                                        } catch (e) { }
-                                    }
-
-                                    const originalSnapshot = safeGetSnapshot(original);
-                                    const versionNum = original ? original.version_number : 'N/A';
-
-                                    return (
-                                        <>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div className="border-r border-gray-200 pr-2">
-                                                    <p className="font-semibold text-blue-600">Current (Live)</p>
-                                                    <p>Title: "{currentDecision.statement || currentDecision.title}"</p>
-                                                    <p>Prior: {currentDecision.priorityLevel || currentDecision.priority_level}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-purple-600">Original (v{versionNum})</p>
-                                                    <p>Title: "{originalSnapshot.title || 'N/A'}"</p>
-                                                    <p>Prior: {originalSnapshot.priority_level || originalSnapshot.priorityLevel || 'N/A'}</p>
-                                                </div>
-                                            </div>
-                                            <div className="mt-2 pt-2 border-t border-gray-200">
-                                                <p className="mb-1"><strong>Raw Original Snapshot (v{versionNum}):</strong></p>
-                                                <pre className="bg-gray-100 p-1 rounded text-[10px] break-all whitespace-pre-wrap">
-                                                    {JSON.stringify(originalSnapshot, null, 2).substring(0, 300) + '...'}
-                                                </pre>
-                                            </div>
-                                        </>
-                                    );
-                                })()}
-                            </div>
+                            <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Drift Reasons</h5>
+                            <ul className="space-y-2 mb-4">
+                                {driftData.reasons.map((reason, idx) => (
+                                    <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                                        <span className="mt-1.5 w-1 h-1 rounded-full bg-gray-400" />
+                                        {reason}
+                                    </li>
+                                ))}
+                            </ul>
                         </motion.div>
                     )}
                 </div>
@@ -208,7 +147,7 @@ export default function VersionHistory({ decisionId, currentDecision, onCompare 
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h4 className="text-md font-medium text-gray-900">Version {version.version_number}</h4>
-                                    <p className="text-sm text-gray-500">{formatDistanceToNow(parseISO(version.created_at))} ago • By {version.created_by || 'Unknown'}</p>
+                                    <p className="text-sm text-gray-500">{(version.created_at || version.createdAt) ? `${formatDistanceToNow(parseISO(version.created_at || version.createdAt))} ago` : 'Unknown date'} • By {version.created_by || version.createdBy || 'Unknown'}</p>
                                 </div>
                                 <button
                                     onClick={() => onCompare(version)}
