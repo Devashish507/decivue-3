@@ -246,32 +246,11 @@ exports.validateWizardData = async (req, res) => {
             initial_confidence: wizardData.basics.initialConfidence
         });
 
-        // Detect conflicts with proposed relationships
-        let conflictWarnings = [];
-        if (wizardData.relationships && wizardData.relationships.length > 0) {
-            const decisionData = {
-                category: wizardData.basics.category,
-                priority_level: wizardData.basics.priorityLevel,
-                impact_level: wizardData.basics.impactLevel,
-                target_review_date: wizardData.basics.targetReviewDate,
-                decision_type: wizardData.type?.decisionType
-            };
-
-            conflictWarnings = await conflictDetectionService.detectConflicts(
-                decisionData,
-                wizardData.relationships.map(r => ({
-                    targetId: r.targetDecisionId,
-                    type: r.relationType
-                }))
-            );
-        }
-
         res.json({
             success: true,
             data: {
                 isValid: validationErrors.filter(e => e.severity !== 'WARNING').length === 0,
-                validationErrors,
-                conflictWarnings
+                validationErrors
             }
         });
 
