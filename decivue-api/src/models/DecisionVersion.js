@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         snapshot_json: {
             type: DataTypes.JSON, // Use JSON for MySQL/Postgres, or TEXT for SQLite
-            allowNull: false
+            allowNull: true  // CHANGED: Allow NULL to match database schema
         },
         changed_fields_json: {
             type: DataTypes.JSON,

@@ -245,6 +245,16 @@ export default function DecisionDetail() {
     }
   }
 
+  const handleDelete = async () => {
+    try {
+      await decisionService.delete(id)
+      showToast('Decision deleted successfully')
+      setTimeout(() => navigate('/decisions'), 1000)
+    } catch (err) {
+      showToast('Error: ' + err.message)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Toast */}
@@ -620,6 +630,19 @@ export default function DecisionDetail() {
                       </svg>
                       Mark Reviewed
                     </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to delete this decision? This action cannot be undone.')) {
+                          handleDelete()
+                        }
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete Decision
+                    </button>
                   </div>
                 </div>
 
@@ -666,6 +689,7 @@ export default function DecisionDetail() {
               ) : (
                 <VersionHistory
                   decisionId={id}
+                  currentDecision={decision}
                   onCompare={(version) => setComparingVersion(version)}
                 />
               )}
@@ -816,72 +840,6 @@ export default function DecisionDetail() {
         </div>
       </Modal>
 
-      {/* Delete Button */}
-      <div className="mt-8 flex justify-end">
-        <button
-          onClick={() => setConfirmAction('delete')}
-          className="px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1.5"
-          title="Delete this decision"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-          Delete
-        </button>
-      </div>
-
-      {/* Confirm Modal */}
-      <Modal
-        isOpen={!!confirmAction}
-        onClose={() => setConfirmAction(null)}
-        title={
-          confirmAction === 'reaffirm' ? 'Reaffirm Decision' :
-            confirmAction === 'delete' ? 'Delete Decision?' :
-              'Mark as Reviewed'
-        }
-      >
-        <div className="text-sm text-gray-500 mb-4">
-          {confirmAction === 'reaffirm' && (
-            <p>This will confirm the decision is still valid and boost its confidence slightly.</p>
-          )}
-          {confirmAction === 'delete' && (
-            <div className="space-y-2">
-              <p className="font-medium text-red-600">Are you sure you want to delete this decision?</p>
-              <p>This action cannot be undone. Sub-decisions will be unlinked (orphaned).</p>
-            </div>
-          )}
-          {confirmAction !== 'reaffirm' && confirmAction !== 'delete' && (
-            <p>This will update the last reviewed date to today.</p>
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={async () => {
-              if (confirmAction === 'reaffirm') await handleReaffirm();
-              else if (confirmAction === 'delete') {
-                try {
-                  await decisionService.delete(id);
-                  showToast('✅ Decision deleted successfully');
-                  // Delay redirect to show toast
-                  setTimeout(() => navigate('/decisions'), 1500);
-                } catch (err) {
-                  showToast('❌ Error: ' + err.message);
-                }
-              }
-              else await handleMarkReviewed();
-              setConfirmAction(null);
-            }}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium text-white transition-colors ${confirmAction === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-          >
-            Confirm
-          </button>
-          <button onClick={() => setConfirmAction(null)} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
-          </button>
-        </div>
-      </Modal>
     </div >
   )
 }

@@ -189,6 +189,11 @@ exports.getDecisionTree = async (req, res) => {
 exports.updateDecision = async (req, res) => {
     try {
         const { id } = req.params;
+
+        console.log('========================================');
+        console.log('UPDATE DECISION CALLED FOR ID:', id);
+        console.log('========================================');
+
         const decision = await Decision.findByPk(id, {
             include: [{ model: Assumption, as: 'assumptions' }]
         });
@@ -213,21 +218,37 @@ exports.updateDecision = async (req, res) => {
 
         // 2. Create version snapshot if there are meaningful changes
         if (Object.keys(changes).length > 0) {
+            console.log('[VERSIONING] Changes detected:', changes);
+            console.log('[VERSIONING] oldData keys:', Object.keys(oldData));
+            console.log('[VERSIONING] oldData.title:', oldData.title);
+
             const lastVersion = await DecisionVersion.findOne({
                 where: { decision_id: id },
                 order: [['version_number', 'DESC']]
             });
             const nextVersionNumber = (lastVersion?.version_number || 0) + 1;
 
-            await DecisionVersion.create({
+            const snapshotString = JSON.stringify(oldData);
+            const changesString = JSON.stringify(changes);
+
+            console.log('[VERSIONING] Creating version', nextVersionNumber);
+            console.log('[VERSIONING] snapshot_json length:', snapshotString.length);
+            console.log('[VERSIONING] snapshot_json preview:', snapshotString.substring(0, 100));
+
+            const newVersion = await DecisionVersion.create({
                 decision_id: id,
                 version_number: nextVersionNumber,
-                snapshot_json: oldData,
-                changed_fields_json: changes,
+                snapshot_json: snapshotString,
+                changed_fields_json: changesString,
                 confidence_before: oldData.current_confidence,
                 confidence_after: current_confidence !== undefined ? current_confidence : oldData.current_confidence,
                 created_by: 'System' // Placeholder until auth is fully integrated
             });
+
+            console.log('[VERSIONING] Version created with ID:', newVersion.id);
+            console.log('[VERSIONING] Saved snapshot_json type:', typeof newVersion.snapshot_json);
+        } else {
+            console.log('[VERSIONING] No changes detected, skipping version creation');
         }
         // --- VERSIONING LOGIC END ---
 

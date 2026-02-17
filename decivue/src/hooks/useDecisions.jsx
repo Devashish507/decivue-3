@@ -71,7 +71,17 @@ export const DecisionProvider = ({ children }) => {
   }
 
   const deleteDecision = async (id) => {
-    // Placeholder
+    try {
+      await decisionService.delete(id)
+      // Optimistic update
+      setDecisions(prev => prev.filter(d => d.id !== id))
+      // Background refresh to ensure consistency
+      fetchDecisions({ includeSubDecisions: true })
+      return true
+    } catch (err) {
+      console.error('Failed to delete decision:', err)
+      throw err
+    }
   }
 
   const reaffirmDecision = async (id) => {
@@ -99,10 +109,10 @@ export const DecisionProvider = ({ children }) => {
     markReviewed,
     refresh: fetchDecisions,
     stats: {
-      total: decisions.length,
-      healthy: decisions.filter(d => d.healthStatus === 'healthy').length,
-      review: decisions.filter(d => d.healthStatus === 'review').length,
-      atRisk: decisions.filter(d => d.healthStatus === 'at-risk').length,
+      total: decisions.filter(d => !d.parentId).length,
+      healthy: decisions.filter(d => !d.parentId && d.healthStatus === 'healthy').length,
+      review: decisions.filter(d => !d.parentId && d.healthStatus === 'review').length,
+      atRisk: decisions.filter(d => !d.parentId && d.healthStatus === 'at-risk').length,
     },
     alerts: decisions.filter(d => d.healthStatus === 'at-risk' || d.healthStatus === 'review').map(d => ({
       id: `alert-${d.id}`,
