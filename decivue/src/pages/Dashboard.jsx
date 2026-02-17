@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { useDecisions } from '../hooks/useDecisions'
 import StatCard from '../components/StatCard'
 import ConfidenceGauge from '../components/ConfidenceGauge'
 import ReviewAlertCard from '../components/ReviewAlertCard'
 import Tooltip from '../components/Tooltip'
 import { computeHealthScore } from '../utils/helpers'
+import { Plus, Search, Filter, Info, Bell, ArrowRight } from 'lucide-react'
 
 export default function Dashboard() {
   const { decisions, stats } = useDecisions()
@@ -15,7 +17,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const healthScore = computeHealthScore(decisions)
 
-  // Fetch review intelligence alerts
   useEffect(() => {
     const fetchReviewAlerts = async () => {
       try {
@@ -33,7 +34,6 @@ export default function Dashboard() {
     fetchReviewAlerts()
   }, [])
 
-  // Flatten all alerts for filtering
   const allAlerts = [
     ...reviewAlerts.GOVERNANCE_RISK,
     ...reviewAlerts.HIGH_PRIORITY,
@@ -52,175 +52,171 @@ export default function Dashboard() {
     return true
   })
 
-  // Determine health color/label
   const getHealthStatus = (score) => {
-    if (score >= 80) return { label: 'Excellent', color: 'text-green-600', bg: 'bg-green-50' }
-    if (score >= 60) return { label: 'Good', color: 'text-blue-600', bg: 'bg-blue-50' }
-    if (score >= 40) return { label: 'Fair', color: 'text-amber-600', bg: 'bg-amber-50' }
-    return { label: 'Correction Needed', color: 'text-red-600', bg: 'bg-red-50' }
+    if (score >= 80) return { label: 'Optimal', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' }
+    if (score >= 60) return { label: 'Stable', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' }
+    if (score >= 40) return { label: 'Caution', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' }
+    return { label: 'Critical', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' }
   }
 
   const status = getHealthStatus(healthScore)
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Overview of your decision portfolio health and status.
-          </p>
+    <div className="space-y-10">
+      {/* Premium Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-widest">
+            <div className="w-8 h-[1px] bg-indigo-600" />
+            Strategic Overview
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Command Center</h1>
+          <p className="text-slate-500 font-medium">Monitoring {decisions.length} active strategic threads.</p>
         </div>
+
         <Link
           to="/decisions/new"
-          className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
+          className="group inline-flex items-center gap-2 bg-slate-900 text-white px-6 py-3.5 rounded-2xl font-bold shadow-2xl shadow-slate-200 hover:bg-slate-800 transition-all hover:-translate-y-1 active:scale-95"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Add Decision
+          <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+          <span>New Decision</span>
         </Link>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Grid: Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
-          label="Total Decisions"
+          label="Active Repository"
           value={stats.total}
           color="blue"
-          icon={
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          }
+          icon={<Search className="w-6 h-6" />}
         />
         <StatCard
-          label="Healthy"
+          label="Optimal Health"
           value={stats.healthy}
           color="green"
-          icon={
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+          icon={<Bell className="w-6 h-6" />}
         />
         <StatCard
-          label="Needs Review"
+          label="Pending Review"
           value={stats.review}
           color="amber"
-          icon={
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+          icon={<Filter className="w-6 h-6" />}
         />
         <StatCard
-          label="At Risk"
+          label="High Risk Zones"
           value={stats.atRisk}
           color="red"
-          icon={
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          }
+          icon={<Info className="w-6 h-6" />}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Health Score Widget */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
-          <div className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-            <Tooltip content="Weighted average of confidence, risk, and progress across all decisions">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+      {/* Middle Section: Health & Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Health Analytics Widget */}
+        <div className="lg:col-span-4 bg-white rounded-[2.5rem] border border-slate-100 p-8 flex flex-col items-center justify-center text-center shadow-xl shadow-slate-100 relative overflow-hidden group">
+          <div className="absolute top-6 right-6 text-slate-300 hover:text-indigo-500 transition-colors cursor-help">
+            <Tooltip content="Collective intelligence score based on confidence metrics, risk parameters, and execution progress.">
+              <Info className="w-5 h-5" />
             </Tooltip>
           </div>
 
-          <h2 className="text-base font-semibold text-gray-900 mb-6">Portfolio Health</h2>
+          <div className="absolute -z-10 top-0 left-0 w-full h-1/2 bg-gradient-to-b from-slate-50 to-transparent" />
 
-          <div className="relative mb-4">
-            <div className={`absolute inset-0 blur-2xl opacity-20 ${status.bg}`}></div>
-            <ConfidenceGauge value={healthScore} size={180} strokeWidth={16} />
+          <h2 className="text-xs uppercase tracking-widest font-black text-slate-400 mb-8 px-4 py-1.5 bg-slate-50 rounded-full">Portfolio Intelligence</h2>
+
+          <div className="relative mb-6">
+            <div className={`absolute inset-0 blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity duration-700 ${status.bg}`} />
+            <ConfidenceGauge value={healthScore} size={200} strokeWidth={18} />
           </div>
 
-          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${status.bg} ${status.color} mb-2`}>
-            {status.label}
-          </div>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-tighter border-2 ${status.border} ${status.bg} ${status.color} mb-4`}
+          >
+            <div className={`w-2 h-2 rounded-full animate-pulse bg-current`} />
+            {status.label} Status
+          </motion.div>
 
-          <p className="text-sm text-gray-500 max-w-[240px]">
-            Your decision portfolio is maintaining a <strong>{status.label.toLowerCase()}</strong> status.
+          <p className="text-sm text-slate-500 max-w-[260px] font-medium leading-relaxed">
+            Your decision framework is currently operating at <span className="text-slate-900 font-bold">{healthScore}%</span> efficiency.
           </p>
         </div>
 
-        {/* Review Intelligence Alerts Widget */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col h-[400px]">
-          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">Review Intelligence Alerts</h2>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {reviewAlerts.GOVERNANCE_RISK.length} governance risks · {reviewAlerts.upcoming.length} upcoming reviews
-              </p>
-            </div>
+        {/* Intelligence Alerts System */}
+        <div className="lg:col-span-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100 flex flex-col min-h-[500px] overflow-hidden">
+          <div className="p-8 border-b border-slate-50 bg-gradient-to-r from-white to-slate-50/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  Live Intelligence Alerts
+                  <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-ping" />
+                </h2>
+                <p className="text-sm text-slate-500 font-medium mt-1">
+                  Active monitoring: <span className="text-rose-500 font-bold">{reviewAlerts.GOVERNANCE_RISK.length} risks</span> detected.
+                </p>
+              </div>
 
-            <div className="flex gap-2">
-              <select
-                value={filterStatus}
-                onChange={e => setFilterStatus(e.target.value)}
-                className="px-3 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-gray-50 text-gray-600 cursor-pointer hover:bg-gray-100"
-              >
-                <option value="all">All Alerts</option>
-                <option value="governance">Governance Risk</option>
-                <option value="priority">High Priority</option>
-                <option value="reminder">Reminders</option>
-                <option value="upcoming">Upcoming</option>
-              </select>
+              <div className="flex items-center gap-2 p-1.5 bg-slate-100/50 rounded-2xl border border-slate-200/50">
+                <select
+                  value={filterStatus}
+                  onChange={e => setFilterStatus(e.target.value)}
+                  className="px-4 py-2 text-xs font-bold uppercase tracking-wider border-none focus:ring-0 bg-transparent text-slate-600 cursor-pointer"
+                >
+                  <option value="all">Priority: All</option>
+                  <option value="governance">Governance</option>
+                  <option value="priority">High Priority</option>
+                  <option value="reminder">Standard</option>
+                  <option value="upcoming">Future</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="p-2 border-b border-gray-100 bg-gray-50/50">
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+          <div className="px-8 py-4 bg-slate-50/30 flex items-center gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
               <input
                 type="text"
-                placeholder="Search alerts..."
+                placeholder="Search intelligence cache..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-transparent border-none focus:ring-0 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-slate-100 rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/20 placeholder-slate-400 font-medium shadow-sm"
               />
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-premium">
             {loading ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-                <p className="text-sm font-medium text-gray-500">Loading alerts...</p>
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
+                <div className="w-10 h-10 border-4 border-indigo-50 border-t-indigo-500 rounded-full animate-spin" />
+                <p className="text-sm font-black uppercase tracking-widest">Synchronizing Data...</p>
               </div>
             ) : filteredAlerts.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                  <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
+              <div className="h-full flex flex-col items-center justify-center text-slate-300 gap-4 py-10 opacity-50">
+                <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center">
+                  <Bell className="w-10 h-10 text-slate-200" />
                 </div>
-                <p className="text-sm font-medium text-gray-500">All clear</p>
-                <p className="text-xs text-gray-400">No review alerts at this time</p>
+                <div className="text-center">
+                  <p className="text-base font-black text-slate-900">System Clear</p>
+                  <p className="text-sm font-medium">No alerts requiring immediate attention.</p>
+                </div>
               </div>
             ) : (
-              filteredAlerts.map(alert => (
-                <ReviewAlertCard key={alert.id} alert={alert} />
-              ))
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredAlerts.map(alert => (
+                  <ReviewAlertCard key={alert.id} alert={alert} />
+                ))}
+              </div>
             )}
           </div>
 
           {filteredAlerts.length > 0 && (
-            <div className="p-3 border-t border-gray-100 bg-gray-50 rounded-b-2xl text-center">
-              <button className="text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors">
-                View All Notifications
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-center">
+              <button className="group text-xs font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition-all flex items-center gap-2">
+                Expand Intelligence Logs
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           )}

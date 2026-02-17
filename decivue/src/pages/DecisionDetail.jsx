@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Network, Shield, MessageSquare, Files, History, Activity } from 'lucide-react'
 import { useDecisions } from '../hooks/useDecisions'
 import HealthBadge from '../components/HealthBadge'
 import ConfidenceGauge from '../components/ConfidenceGauge'
@@ -28,10 +29,10 @@ import GovernanceActionPanel from '../components/GovernanceActionPanel'
 import AssignRoleModal from '../components/AssignRoleModal'
 
 const lifecycleBadgeColors = {
-  blue: 'bg-blue-100 text-blue-800 border-blue-200',
-  green: 'bg-green-100 text-green-800 border-green-200',
-  amber: 'bg-amber-100 text-amber-800 border-amber-200',
-  red: 'bg-red-100 text-red-800 border-red-200',
+  blue: 'bg-indigo-50 text-indigo-700 border-indigo-100/50',
+  green: 'bg-emerald-50 text-emerald-700 border-emerald-100/50',
+  amber: 'bg-amber-50 text-amber-700 border-amber-100/50',
+  red: 'bg-rose-50 text-rose-700 border-rose-100/50',
 }
 
 export default function DecisionDetail() {
@@ -313,60 +314,64 @@ export default function DecisionDetail() {
       </Link>
 
       {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[80px] -u-z-10 group-hover:bg-indigo-500/10 transition-colors duration-700" />
+
+        <div className="flex flex-col lg:flex-row lg:items-center gap-10">
           <div className="flex-1">
-            <div className="flex items-center gap-3 flex-wrap mb-3">
+            <div className="flex items-center gap-3 flex-wrap mb-5">
               <HealthBadge status={decision.healthStatus} />
               <GovernanceBadge status={decision.governanceStatus} required={decision.isGovernanceRequired} />
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${lifecycleBadgeColors[lifecycleColor]}`}>
+              <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${lifecycleBadgeColors[lifecycleColor]}`}>
                 {getLifecycleLabel(decision.lifecycleState)}
               </span>
               <Link
                 to={`/tree?focusId=${decision.id}`}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1 rounded-full hover:bg-purple-100 transition-colors"
+                className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-purple-700 bg-purple-50 border border-purple-100/50 px-4 py-1.5 rounded-full hover:bg-purple-600 hover:text-white transition-all shadow-sm"
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
-                </svg>
+                <Network className="w-3.5 h-3.5" />
                 View in Tree
               </Link>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{decision.statement}</h1>
-            <p className="text-sm text-gray-500">{decision.context}</p>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mb-4 tracking-tighter leading-tight">{decision.statement}</h1>
+            <p className="text-base text-slate-500 font-medium max-w-3xl leading-relaxed italic border-l-4 border-slate-100 pl-4">
+              "{decision.context}"
+            </p>
           </div>
-          <div className="flex-shrink-0">
-            <div className="relative">
-              <ConfidenceGauge value={decision.confidence} size={130} strokeWidth={12} />
+          <div className="flex-shrink-0 flex flex-col items-center">
+            <div className="relative group/gauge">
+              <div className="absolute inset-0 bg-indigo-500/10 rounded-full blur-2xl opacity-0 group-hover/gauge:opacity-100 transition-opacity duration-500" />
+              <ConfidenceGauge value={decision.confidence} size={160} strokeWidth={14} />
             </div>
+            <span className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Contextual Confidence</span>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-6 overflow-x-auto scrollbar-thin" aria-label="Tabs">
+      <div className="border-b border-slate-200/60 sticky top-0 bg-slate-50/80 backdrop-blur-md z-30 -mx-6 sm:-mx-10 px-6 sm:px-10">
+        <nav className="-mb-px flex space-x-10 overflow-x-auto scrollbar-premium" aria-label="Tabs">
           {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'tree', label: 'Decision Tree' },
-            { id: 'assistant', label: 'Assistant' },
-            { id: 'attachments', label: 'Attachments' },
-            { id: 'versions', label: 'Versions' },
-            { id: 'governance', label: 'Governance' },
+            { id: 'overview', label: 'Strategic Overview' },
+            { id: 'tree', label: 'Visual Architecture' },
+            { id: 'assistant', label: 'AI Synthesis' },
+            { id: 'attachments', label: 'Knowledge Base' },
+            { id: 'versions', label: 'Iteration History' },
+            { id: 'governance', label: 'Governance Logs' },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative whitespace-nowrap py-4 px-1 font-medium text-sm transition-colors duration-200 ${activeTab === tab.id
-                ? 'text-blue-600'
-                : 'text-gray-500 hover:text-gray-900'
+              className={`relative whitespace-nowrap py-5 px-1 font-bold text-[11px] uppercase tracking-widest transition-all duration-300 ${activeTab === tab.id
+                ? 'text-indigo-600 scale-105'
+                : 'text-slate-400 hover:text-slate-900'
                 }`}
             >
               {tab.label}
               {activeTab === tab.id && (
                 <motion.div
                   layoutId="detail-tab-indicator"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"
+                  className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}

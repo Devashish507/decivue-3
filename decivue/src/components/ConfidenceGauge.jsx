@@ -1,25 +1,26 @@
+import { motion } from 'framer-motion'
+
 export default function ConfidenceGauge({ value, size = 120, strokeWidth = 10, label = true }) {
   const radius = (size - strokeWidth) / 2
   const circumference = radius * 2 * Math.PI
   const offset = circumference - (value / 100) * circumference
 
   const getColor = (v) => {
-    if (v >= 70) return '#22c55e'
-    if (v >= 50) return '#f59e0b'
-    return '#ef4444'
+    if (v >= 70) return '#10b981' // emerald-500
+    if (v >= 50) return '#f59e0b' // amber-500
+    return '#f43f5e' // rose-500
   }
 
   const getTrackColor = (v) => {
-    if (v >= 70) return '#dcfce7'
-    if (v >= 50) return '#fef3c7'
-    return '#fee2e2'
+    if (v >= 70) return '#ecfdf5' // emerald-50
+    if (v >= 50) return '#fffbeb' // amber-50
+    return '#fff1f2' // rose-50
   }
 
-  // Adjust font size based on gauge size
-  const valueSize = size < 60 ? 'text-sm' : size < 80 ? 'text-lg' : 'text-2xl'
+  const valueSize = size < 60 ? 'text-[10px]' : size < 80 ? 'text-xs' : 'text-2xl'
 
   return (
-    <div className="relative flex flex-col items-center" style={{ width: size, height: size }}>
+    <div className="relative flex flex-col items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
@@ -29,7 +30,10 @@ export default function ConfidenceGauge({ value, size = 120, strokeWidth = 10, l
           stroke={getTrackColor(value)}
           strokeWidth={strokeWidth}
         />
-        <circle
+        <motion.circle
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1.5, ease: "circOut" }}
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -37,37 +41,43 @@ export default function ConfidenceGauge({ value, size = 120, strokeWidth = 10, l
           stroke={getColor(value)}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
           strokeLinecap="round"
-          className="transition-all duration-700 ease-out"
+          className="drop-shadow-[0_0_4px_rgba(0,0,0,0.1)]"
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className={`${valueSize} font-bold text-gray-900`}>{Math.round(value)}%</span>
-      </div>
+      {label && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className={`${valueSize} font-black text-slate-900 tracking-tighter`}>{Math.round(value)}%</span>
+        </div>
+      )}
     </div>
   )
 }
 
 export function InlineConfidenceGauge({ value }) {
   const getColor = (v) => {
-    if (v >= 70) return 'bg-green-500'
-    if (v >= 50) return 'bg-amber-500'
-    return 'bg-red-500'
+    if (v >= 70) return 'from-emerald-400 to-emerald-600'
+    if (v >= 50) return 'from-amber-400 to-amber-600'
+    return 'from-rose-400 to-rose-600'
   }
 
   const getTrack = (v) => {
-    if (v >= 70) return 'bg-green-100'
-    if (v >= 50) return 'bg-amber-100'
-    return 'bg-red-100'
+    if (v >= 70) return 'bg-emerald-100/50'
+    if (v >= 50) return 'bg-amber-100/50'
+    return 'bg-rose-100/50'
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <div className={`w-20 h-2 rounded-full ${getTrack(value)}`}>
-        <div className={`h-2 rounded-full ${getColor(value)} transition-all duration-700 ease-out`} style={{ width: `${value}%` }} />
+    <div className="flex items-center gap-3">
+      <div className={`w-24 h-2 rounded-full ${getTrack(value)} relative overflow-hidden p-[1px]`}>
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${value}%` }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className={`h-full rounded-full bg-gradient-to-r ${getColor(value)} shadow-sm`}
+        />
       </div>
-      <span className="text-sm font-medium text-gray-700">{Math.round(value)}%</span>
+      <span className="text-xs font-black text-slate-900 tracking-tight tabular-nums">{Math.round(value)}%</span>
     </div>
   )
 }
